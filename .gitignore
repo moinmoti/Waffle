@@ -1,0 +1,19 @@
+# CMake Entries
+build
+compile_commands.json
+KDBTree
+
+# Other
+Experiments
+Snapshots
+data
+*._*
+*DS_Store*
+*.dat
+*.idx
+*.csv
+*.png
+*.err
+*.json
+.python-version
+Index
