@@ -15,7 +15,7 @@ public:
 
     // Directory specific members
     optional<vector<Node*>> contents;
-    optional<vector<Split*>> splits;
+    optional<vector<Split>> splits;
 
     // Page specific members
     optional<vector<array<float, 2>>> points;

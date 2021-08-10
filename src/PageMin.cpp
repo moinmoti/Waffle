@@ -110,7 +110,7 @@ void PageMin::bulkload(string filename, long limit) {
     cout << "Initiate page fission" << endl;
     root->points = Points;
     root->contents = vector<Node *>();
-    root->splits = vector<Split *>();
+    root->splits = vector<Split>();
     pageFission(root);
     root->height = 1;
     root->points->clear();

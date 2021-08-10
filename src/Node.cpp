@@ -93,10 +93,10 @@ vector<Node *> Node::splitPage(Node *pn, int pageCap) {
     bool axis = (rect[2] - rect[0]) < (rect[3] - rect[1]);
     sort(all(points.value()),
          [axis](const array<float, 2> &l, const array<float, 2> &r) { return l[axis] < r[axis]; });
-    Split *newSplit = new Split();
-    newSplit->axis = axis;
-    newSplit->pt[axis] = points.value()[splitPos][axis];
-    newSplit->pt[!axis] = getCenter()[!axis];
+    Split newSplit = Split();
+    newSplit.axis = axis;
+    newSplit.pt[axis] = points.value()[splitPos][axis];
+    newSplit.pt[!axis] = getCenter()[!axis];
 
     // cerr << "Create new pages" << endl;
     vector<Node *> pages(2);
@@ -104,7 +104,7 @@ vector<Node *> Node::splitPage(Node *pn, int pageCap) {
         pages[i] = new Node();
         pages[i]->height = 0;
         pages[i]->rect = rect;
-        pages[i]->rect[newSplit->axis + !i * NUMDIMS] = newSplit->pt[newSplit->axis];
+        pages[i]->rect[newSplit.axis + !i * NUMDIMS] = newSplit.pt[newSplit.axis];
         // pages[i]->points = vector<array<float, 2>>();
     }
 
@@ -118,22 +118,22 @@ vector<Node *> Node::splitPage(Node *pn, int pageCap) {
 
 vector<Node *> Node::splitDirectory(Node *pn) {
     vector<Node *> nodes(2);
-    Split *bestSplit = splits.value()[0];
+    Split bestSplit = splits.value()[0];
     for (int i = 0; i < nodes.size(); i++) {
         nodes[i] = new Node();
         nodes[i]->height = height;
         nodes[i]->rect = rect;
-        nodes[i]->rect[bestSplit->axis + !i * NUMDIMS] = bestSplit->pt[bestSplit->axis];
+        nodes[i]->rect[bestSplit.axis + !i * NUMDIMS] = bestSplit.pt[bestSplit.axis];
         nodes[i]->contents = vector<Node *>();
         // nodes[i]->contents->reserve(contents->size());
-        nodes[i]->splits = vector<Split *>();
+        nodes[i]->splits = vector<Split>();
     }
     for (auto cn : contents.value())
-        nodes[cn->getCenter()[bestSplit->axis] > bestSplit->pt[bestSplit->axis]]
+        nodes[cn->getCenter()[bestSplit.axis] > bestSplit.pt[bestSplit.axis]]
             ->contents->emplace_back(cn);
     for (auto isplit = next(splits->begin()); isplit != splits->end(); isplit++)
-        nodes[(*isplit)->pt[bestSplit->axis] > bestSplit->pt[bestSplit->axis]]
-            ->splits->emplace_back(*isplit);
+        nodes[(*isplit).pt[bestSplit.axis] > bestSplit.pt[bestSplit.axis]]->splits->emplace_back(
+            *isplit);
 
     contents->clear();
     splits->clear();
