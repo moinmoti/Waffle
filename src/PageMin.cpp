@@ -19,7 +19,7 @@ void __f(const char *names, Arg1 &&arg1, Args &&... args) {
 #define trace(...)
 #endif
 
-#define NUMDIMS 2
+#define DIMS 2
 #define all(c) c.begin(), c.end()
 
 void printRect(string Rect, array<float, 4> r) {

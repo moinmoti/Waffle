@@ -17,10 +17,10 @@ void __f(const char *names, Arg1 &&arg1, Args &&... args) {
 #endif
 
 #define all(c) c.begin(), c.end()
-#define NUMDIMS 2
+#define DIMS 2
 #define dist(x1, y1, x2, y2) (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)
 #define distManhattan(x1, y1, x2, y2) std::abs(x1 - x2) + std::abs(y1 - y2)
-#define oppDir(d) (d + NUMDIMS) % (NUMDIMS * 2)
+#define oppDir(d) (d + DIMS) % (DIMS * 2)
 
 #define V 0
 #define H 1
@@ -34,23 +34,23 @@ void printNode(string str, array<float, 4> r) {
 }
 
 bool Node::overlap(array<float, 4> r) const {
-    for (int i = 0; i < NUMDIMS; i++)
-        if (rect[i] > r[i + NUMDIMS] || r[i] > rect[i + NUMDIMS])
+    for (int i = 0; i < DIMS; i++)
+        if (rect[i] > r[i + DIMS] || r[i] > rect[i + DIMS])
             return false;
     return true;
 }
 
 bool Node::containsPt(array<float, 2> p) const {
     bool result = true;
-    for (int i = 0; i < NUMDIMS; i++)
-        result = result & (rect[i] <= p[i]) & (rect[i + NUMDIMS] >= p[i]);
+    for (int i = 0; i < DIMS; i++)
+        result = result & (rect[i] <= p[i]) & (rect[i + DIMS] >= p[i]);
     return result;
 }
 
 bool Node::inside(array<float, 4> r) const {
     bool result = true;
-    for (int i = 0; i < NUMDIMS; i++)
-        result = result & (rect[i] >= r[i]) & (rect[i + NUMDIMS] <= r[i + NUMDIMS]);
+    for (int i = 0; i < DIMS; i++)
+        result = result & (rect[i] >= r[i]) & (rect[i + DIMS] <= r[i + DIMS]);
     return result;
 }
 
@@ -104,7 +104,7 @@ vector<Node *> Node::splitPage(Node *pn, int pageCap) {
         pages[i] = new Node();
         pages[i]->height = 0;
         pages[i]->rect = rect;
-        pages[i]->rect[newSplit.axis + !i * NUMDIMS] = newSplit.pt[newSplit.axis];
+        pages[i]->rect[newSplit.axis + !i * DIMS] = newSplit.pt[newSplit.axis];
         // pages[i]->points = vector<array<float, 2>>();
     }
 
@@ -123,7 +123,7 @@ vector<Node *> Node::splitDirectory(Node *pn) {
         nodes[i] = new Node();
         nodes[i]->height = height;
         nodes[i]->rect = rect;
-        nodes[i]->rect[bestSplit.axis + !i * NUMDIMS] = bestSplit.pt[bestSplit.axis];
+        nodes[i]->rect[bestSplit.axis + !i * DIMS] = bestSplit.pt[bestSplit.axis];
         nodes[i]->contents = vector<Node *>();
         // nodes[i]->contents->reserve(contents->size());
         nodes[i]->splits = vector<Split>();
@@ -142,8 +142,8 @@ vector<Node *> Node::splitDirectory(Node *pn) {
 }
 
 inline bool overlaps(array<float, 4> r, array<float, 2> p) {
-    for (int i = 0; i < NUMDIMS; i++) {
-        if (r[i] > p[i] || p[i] > r[i + NUMDIMS])
+    for (int i = 0; i < DIMS; i++) {
+        if (r[i] > p[i] || p[i] > r[i + DIMS])
             return false;
     }
     return true;
@@ -185,7 +185,7 @@ Node::~Node() {
     for (int dir = 0; dir < neighbors.size(); dir++) {
         if (neighbors[dir].size() > 1)
             continue;
-        int oppDir = (dir + NUMDIMS) % (NUMDIMS * 2);
+        int oppDir = (dir + DIMS) % (DIMS * 2);
         for (auto nb : neighbors[dir]) {
             if (rect[dir] == nb->rect[oppDir] && rect[(dir + 1) % 2] == nb->rect[(dir + 1) % 2] &&
                 rect[(dir + 1) % 2 + 2] == nb->rect[(dir + 1) % 2 + 2]) {

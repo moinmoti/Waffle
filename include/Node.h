@@ -30,8 +30,6 @@ public:
 
     // Common Node methods
     int size() const;
-    //void mergeNode(int, Node*);
-    //int deleteNode(Node*);
 
     // Directory specific methods
     vector<Node*> splitPage(Node *, int pageCap);
