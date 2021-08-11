@@ -18,8 +18,6 @@ public:
 
     void snapshot() const;
     void load(string, long);
-    void pageFission(Node *);
-    void directoryFission(Node *);
     void bulkload(string, long);
     void rangeQuery(array<float, 4>, map<string, double> &);
     void deleteQuery(array<float, 2>, map<string, double> &);

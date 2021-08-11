@@ -62,28 +62,6 @@ void PageMin::snapshot() const {
     log.close();
 }
 
-void PageMin::directoryFission(Node *node) {
-    vector<Node *> directories = node->splitDirectory(root);
-    for (auto directory : directories) {
-        if (directory->contents->size() > directoryCap) {
-            directoryFission(directory);
-            delete directory;
-        } else
-            root->contents->emplace_back(directory);
-    }
-}
-
-void PageMin::pageFission(Node *node) {
-    vector<Node *> pages = node->splitPage(root, pageCap);
-    for (auto page : pages) {
-        if (page->points->size() > pageCap) {
-            pageFission(page);
-            delete page;
-        } else
-            root->contents->emplace_back(page);
-    }
-}
-
 void PageMin::bulkload(string filename, long limit) {
     string line;
     ifstream file(filename);
@@ -111,14 +89,14 @@ void PageMin::bulkload(string filename, long limit) {
     root->points = Points;
     root->contents = vector<Node *>();
     root->splits = vector<Split>();
-    pageFission(root);
+    root->fission(root, pageCap);
     root->height = 1;
     root->points->clear();
     root->points.reset();
 
     cout << "Initiate directory fission" << endl;
     while (root->contents->size() > directoryCap) {
-        directoryFission(root);
+        root->fusion(root, directoryCap);
         root->height++;
     }
 }

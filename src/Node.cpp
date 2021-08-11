@@ -118,6 +118,28 @@ long Node::pointCount() const {
     return totalPoints;
 } */
 
+void Node::fission(Node *parent, int pageCap) {
+    vector<Node *> pages = splitPage(parent, pageCap);
+    for (auto page : pages) {
+        if (page->points->size() > pageCap) {
+            page->fission(parent, pageCap);
+            delete page;
+        } else
+            parent->contents->emplace_back(page);
+    }
+}
+
+void Node::fusion(Node *parent, int directoryCap) {
+    vector<Node *> directories = splitDirectory(parent);
+    for (auto directory : directories) {
+        if (directory->contents->size() > directoryCap) {
+            directory->fusion(parent, directoryCap);
+            delete directory;
+        } else
+            parent->contents->emplace_back(directory);
+    }
+}
+
 bool Node::insertPt(array<float, 2> p, Node *parent, int pageCap, int directoryCap) {
     vector<Node *> newNodes;
     if (points) {
@@ -220,9 +242,10 @@ vector<Node *> Node::splitDirectory(Node *pn) {
 vector<Node *> Node::splitPage(Node *pn, int pageCap) {
     // cerr << "Get Splits" << endl;
     long N = points->size();
-    long splitPos = N / 2;
+    /* long splitPos = N / 2;
     if (N > 2 * pageCap)
-        splitPos = pageCap * floor(ceil(N / float(pageCap)) / 2);
+        splitPos = pageCap * floor(ceil(N / float(pageCap)) / 2); */
+    long splitPos = pageCap * floor(ceil(N / float(pageCap)) / 2);
     bool axis = (rect[2] - rect[0]) < (rect[3] - rect[1]);
     sort(all(points.value()),
          [axis](const array<float, 2> &l, const array<float, 2> &r) { return l[axis] < r[axis]; });

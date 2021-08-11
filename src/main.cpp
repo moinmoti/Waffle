@@ -224,7 +224,7 @@ int main(int argCount, char **args) {
     vector<tuple<char, float, float, float>> queryArray;
     createQuerySet(queryFile, queryArray);
 
-    cerr << "---Evaluation--- " << endl;
+    cout << "---Evaluation--- " << endl;
     evaluate(&index, queryArray, boundary, logFile);
     return 0;
 }
