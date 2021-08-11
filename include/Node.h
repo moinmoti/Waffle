@@ -21,22 +21,22 @@ public:
     optional<vector<array<float, 2>>> points;
 
     // Rect methods
-    array<float, 4> combineRect(array<float, 4>);
-    bool overlap(array<float, 4>) const;
     bool containsPt(array<float, 2> p) const;
-    bool inside(array<float, 4>) const;
     array<float, 2> getCenter() const;
+    bool inside(array<float, 4>) const;
     double minSqrDist(array<float, 4>) const;
+    bool overlap(array<float, 4>) const;
 
-    // Common Node methods
-    int size() const;
-
-    // Directory specific methods
-    vector<Node*> splitPage(Node *, int pageCap);
-
-    // Page specific methods
-    vector<Node*> splitDirectory(Node *);
+    // Node methods
+    /* void flush();
+    long pageCount() const;
+    long pointCount() const; */
+    bool insertPt(array<float, 2> p, Node *, int, int);
+    int rangeSearch(array<float, 4>, map<string, double> &);
     int scan(array<float, 4>) const;
+    int size() const;
+    vector<Node*> splitDirectory(Node *);
+    vector<Node*> splitPage(Node *, int pageCap);
 
     ~Node();
 };

@@ -167,24 +167,9 @@ void PageMin::deleteQuery(array<float, 2> p, map<string, double> &stats) {
         node->points->erase(pt);
 }
 
-void rangeSearch(Node *node, int &pointCount, array<float, 4> query, map<string, double> &stats) {
-    if (node->points) {
-        stats["io"]++;
-        // high_resolution_clock::time_point startTime = high_resolution_clock::now();
-        // pointCount += node->scan(query);
-        /* stats["scanTime"] +=
-            duration_cast<microseconds>(high_resolution_clock::now() - startTime).count(); */
-    } else {
-        for (auto cn : node->contents.value())
-            if (cn->overlap(query))
-                rangeSearch(cn, pointCount, query, stats);
-    }
-}
-
 void PageMin::rangeQuery(array<float, 4> query, map<string, double> &stats) {
-    int pointCount = 0;
-    rangeSearch(root, pointCount, query, stats);
-    // trace(pointCount);
+    int pointCount = root->rangeSearch(query, stats);
+    trace(pointCount);
 }
 
 typedef struct knnPoint {
@@ -199,45 +184,39 @@ typedef struct knnNode {
     bool operator<(const knnNode &second) const { return dist > second.dist; }
 } knnNode;
 
-void kNNSearch(Node *node, array<float, 4> query,
-               priority_queue<knnPoint, vector<knnPoint>> &knnPts, map<string, double> &stats) {
-    auto sqrDist = [](array<float, 4> x, array<float, 2> y) {
+void PageMin::kNNQuery(array<float, 2> p, map<string, double> &stats, int k) {
+    auto calcSqrDist = [](array<float, 4> x, array<float, 2> y) {
         return pow((x[0] - y[0]), 2) + pow((x[1] - y[1]), 2);
     };
+
+    vector<knnPoint> tempPts(k);
+    array query{p[0], p[1], p[0], p[1]};
+    priority_queue<knnPoint, vector<knnPoint>> knnPts(all(tempPts));
     priority_queue<knnNode, vector<knnNode>> unseenNodes;
-    unseenNodes.emplace(knnNode{node, node->minSqrDist(query)});
+    unseenNodes.emplace(knnNode{root, root->minSqrDist(query)});
     double dist, minDist;
-    // high_resolution_clock::time_point startTime;
+    Node *node;
+
     while (!unseenNodes.empty()) {
-        // startTime = high_resolution_clock::now();
         node = unseenNodes.top().sn;
         dist = unseenNodes.top().dist;
         unseenNodes.pop();
         minDist = knnPts.top().dist;
-        /* stats["explore"] +=
-            duration_cast<microseconds>(high_resolution_clock::now() - startTime).count(); */
         if (dist < minDist) {
             if (node->points) {
-                // startTime = high_resolution_clock::now();
                 for (auto p : node->points.value()) {
                     minDist = knnPts.top().dist;
-                    dist = sqrDist(query, p);
+                    dist = calcSqrDist(query, p);
                     if (dist < minDist) {
                         knnPoint kPt;
                         kPt.pt = p;
                         kPt.dist = dist;
                         knnPts.pop();
                         knnPts.push(kPt);
-                        // stats["heapAccess"]++;
                     }
-                    // stats["scanCount"]++;
                 }
                 stats["io"]++;
-                /* stats["scan"] +=
-                    duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
-                 */
             } else {
-                // startTime = high_resolution_clock::now();
                 for (auto cn : node->contents.value()) {
                     minDist = knnPts.top().dist;
                     dist = cn->minSqrDist(query);
@@ -248,30 +227,18 @@ void kNNSearch(Node *node, array<float, 4> query,
                         unseenNodes.push(kn);
                     }
                 }
-                /* stats["explore"] +=
-                    duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
-                 */
             }
         } else
             break;
     }
-}
 
-void PageMin::kNNQuery(array<float, 2> p, map<string, double> &stats, int k) {
-    Node *foundNode;
-    array query{p[0], p[1], p[0], p[1]};
-
-    vector<knnPoint> tempPts(k);
-    priority_queue<knnPoint, vector<knnPoint>> knnPts(all(tempPts));
-    kNNSearch(root, query, knnPts, stats);
-
-    /* double sqrDist;
+    double sqrDist;
     while (!knnPts.empty()) {
         p = knnPts.top().pt;
         sqrDist = knnPts.top().dist;
         knnPts.pop();
         trace(p[0], p[1], sqrDist);
-    } */
+    }
 }
 
 int PageMin::size(map<string, double> &stats) const {
