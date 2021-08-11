@@ -84,61 +84,82 @@ double Node::minSqrDist(array<float, 4> r) const {
     return 0;
 }
 
-vector<Node *> Node::splitPage(Node *pn, int pageCap) {
-    // cerr << "Get Splits" << endl;
-    long N = points->size();
-    long splitPos = N / 2;
-    if (N > 2 * pageCap)
-        splitPos = pageCap * floor(ceil(N / float(pageCap)) / 2);
-    bool axis = (rect[2] - rect[0]) < (rect[3] - rect[1]);
-    sort(all(points.value()),
-         [axis](const array<float, 2> &l, const array<float, 2> &r) { return l[axis] < r[axis]; });
-    Split newSplit = Split();
-    newSplit.axis = axis;
-    newSplit.pt[axis] = points.value()[splitPos][axis];
-    newSplit.pt[!axis] = getCenter()[!axis];
+/////////////////////////////////////////////////////////////////////////////////////////
+// Node Methods
+/////////////////////////////////////////////////////////////////////////////////////////
 
-    // cerr << "Create new pages" << endl;
-    vector<Node *> pages(2);
-    for (int i = 0; i < pages.size(); i++) {
-        pages[i] = new Node();
-        pages[i]->height = 0;
-        pages[i]->rect = rect;
-        pages[i]->rect[newSplit.axis + !i * DIMS] = newSplit.pt[newSplit.axis];
-        // pages[i]->points = vector<array<float, 2>>();
+/* void Node::flush() {
+    points = vector<array<float, 2>>();
+    for (auto node : contents.value()) {
+        if (node->contents)
+            node->flush();
+        points->insert(points->end(), all(node->points.value()));
+        delete node;
     }
-
-    // Splitting points
-    pages[0]->points = vector<array<float, 2>>(points->begin(), points->begin() + splitPos);
-    pages[1]->points = vector<array<float, 2>>(points->begin() + splitPos, points->end());
-
-    pn->splits->emplace_back(newSplit);
-    return pages;
+    contents->clear();
+    contents.reset();
 }
 
-vector<Node *> Node::splitDirectory(Node *pn) {
-    vector<Node *> nodes(2);
-    Split bestSplit = splits.value()[0];
-    for (int i = 0; i < nodes.size(); i++) {
-        nodes[i] = new Node();
-        nodes[i]->height = height;
-        nodes[i]->rect = rect;
-        nodes[i]->rect[bestSplit.axis + !i * DIMS] = bestSplit.pt[bestSplit.axis];
-        nodes[i]->contents = vector<Node *>();
-        // nodes[i]->contents->reserve(contents->size());
-        nodes[i]->splits = vector<Split>();
-    }
-    for (auto cn : contents.value())
-        nodes[cn->getCenter()[bestSplit.axis] > bestSplit.pt[bestSplit.axis]]
-            ->contents->emplace_back(cn);
-    for (auto isplit = next(splits->begin()); isplit != splits->end(); isplit++)
-        nodes[(*isplit).pt[bestSplit.axis] > bestSplit.pt[bestSplit.axis]]->splits->emplace_back(
-            *isplit);
+long Node::pageCount() const {
+    if (points)
+        return 1;
+    long totalPages = 0;
+    for (auto node : contents.value())
+        totalPages += node->pageCount();
+    return totalPages;
+}
 
-    contents->clear();
-    splits->clear();
-    pn->splits->emplace_back(bestSplit);
-    return nodes;
+long Node::pointCount() const {
+    if (points)
+        return points->size();
+    long totalPoints = 0;
+    for (auto node : contents.value())
+        totalPoints += node->pointCount();
+    return totalPoints;
+} */
+
+bool Node::insertPt(array<float, 2> p, Node *parent, int pageCap, int directoryCap) {
+    vector<Node *> newNodes;
+    if (points) {
+        points->emplace_back(p);
+        if (points->size() > pageCap)
+            newNodes = splitPage(parent, pageCap);
+    } else {
+        for (uint i = 0; i < contents->size(); i++) {
+            if (Node *cn = contents.value()[i]; cn->containsPt(p)) {
+                if (cn->insertPt(p, this, pageCap, directoryCap)) {
+                    contents->erase(contents->begin() + i);
+                    delete cn;
+                    if (contents->size() > directoryCap)
+                        newNodes = splitDirectory(parent);
+                }
+                break;
+            }
+        }
+    }
+    if (!newNodes.empty()) {
+        if (this == parent) {
+            parent->contents->clear();
+            parent->height++;
+        }
+        for (auto cn : newNodes)
+            parent->contents->emplace_back(cn);
+        return true;
+    }
+    return false;
+}
+
+int Node::rangeSearch(array<float, 4> query, map<string, double> &stats) {
+    int totalPoints = 0;
+    if (points) {
+        stats["io"]++;
+        totalPoints += scan(query);
+    } else {
+        for (auto cn : contents.value())
+            if (cn->overlap(query))
+                totalPoints += cn->rangeSearch(query, stats);
+    }
+    return totalPoints;
 }
 
 inline bool overlaps(array<float, 4> r, array<float, 2> p) {
@@ -171,6 +192,62 @@ int Node::size() const {
     return totalSize;
 }
 
+vector<Node *> Node::splitDirectory(Node *pn) {
+    vector<Node *> nodes(2);
+    Split bestSplit = splits.value()[0];
+    for (int i = 0; i < nodes.size(); i++) {
+        nodes[i] = new Node();
+        nodes[i]->height = height;
+        nodes[i]->rect = rect;
+        nodes[i]->rect[bestSplit.axis + !i * DIMS] = bestSplit.pt[bestSplit.axis];
+        nodes[i]->contents = vector<Node *>();
+        // nodes[i]->contents->reserve(contents->size());
+        nodes[i]->splits = vector<Split>();
+    }
+    for (auto cn : contents.value())
+        nodes[cn->getCenter()[bestSplit.axis] > bestSplit.pt[bestSplit.axis]]
+            ->contents->emplace_back(cn);
+    for (auto isplit = next(splits->begin()); isplit != splits->end(); isplit++)
+        nodes[(*isplit).pt[bestSplit.axis] > bestSplit.pt[bestSplit.axis]]->splits->emplace_back(
+            *isplit);
+
+    contents->clear();
+    splits->clear();
+    pn->splits->emplace_back(bestSplit);
+    return nodes;
+}
+
+vector<Node *> Node::splitPage(Node *pn, int pageCap) {
+    // cerr << "Get Splits" << endl;
+    long N = points->size();
+    long splitPos = N / 2;
+    if (N > 2 * pageCap)
+        splitPos = pageCap * floor(ceil(N / float(pageCap)) / 2);
+    bool axis = (rect[2] - rect[0]) < (rect[3] - rect[1]);
+    sort(all(points.value()),
+         [axis](const array<float, 2> &l, const array<float, 2> &r) { return l[axis] < r[axis]; });
+    Split newSplit = Split();
+    newSplit.axis = axis;
+    newSplit.pt[axis] = points.value()[splitPos][axis];
+    newSplit.pt[!axis] = getCenter()[!axis];
+
+    // cerr << "Create new pages" << endl;
+    vector<Node *> pages(2);
+    for (int i = 0; i < pages.size(); i++) {
+        pages[i] = new Node();
+        pages[i]->height = 0;
+        pages[i]->rect = rect;
+        pages[i]->rect[newSplit.axis + !i * DIMS] = newSplit.pt[newSplit.axis];
+    }
+
+    // Splitting points
+    pages[0]->points = vector<array<float, 2>>(points->begin(), points->begin() + splitPos);
+    pages[1]->points = vector<array<float, 2>>(points->begin() + splitPos, points->end());
+
+    pn->splits->emplace_back(newSplit);
+    return pages;
+}
+
 Node::~Node() {
     if (points) {
         points->clear();
@@ -180,20 +257,3 @@ Node::~Node() {
         contents.reset();
     }
 }
-
-/* int Node::deleteNode(Node *pn) {
-    for (int dir = 0; dir < neighbors.size(); dir++) {
-        if (neighbors[dir].size() > 1)
-            continue;
-        int oppDir = (dir + DIMS) % (DIMS * 2);
-        for (auto nb : neighbors[dir]) {
-            if (rect[dir] == nb->rect[oppDir] && rect[(dir + 1) % 2] == nb->rect[(dir + 1) % 2] &&
-                rect[(dir + 1) % 2 + 2] == nb->rect[(dir + 1) % 2 + 2]) {
-                nb->mergeNode(dir, this);
-                pn->children.erase(find(all(pn->children), this));
-                return 1;
-            }
-        }
-    }
-    return 0;
-} */
