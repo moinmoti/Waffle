@@ -132,7 +132,8 @@ void evaluate(PageMin *index, vector<tuple<char, float, float, float>> queryArra
         } else if (get<0>(q) == 'i') {
             insertQuery(q, index, insertLog);
             insertLog["count"]++;
-            // trace(insertLog["count"]);
+            if (long(insertLog["count"]) % long(1e6) == 0)
+                trace(insertLog["count"]);
         } else if (get<0>(q) == 'd') {
             deleteQuery(q, index, deleteLog);
             deleteLog["count"]++;
@@ -184,11 +185,11 @@ int main(int argCount, char **args) {
     string queryType = string(args[2]);
     int directoryCap = stoi(string(args[3]));
     int pageCap = stoi(string(args[4]));
-    long insertions = 0;
-    long limit = 1e6 - insertions;
+    long insertions = 1e7;
+    long limit = 1e8 - insertions;
     /* string sign = "-I1e" + to_string(int(log10(insertions))) + "-" + to_string(directoryCap) +
        "-" + to_string(pageCap); */
-    string sign = "-1e6-" + to_string(directoryCap) + "-" + to_string(pageCap);
+    string sign = "-1e8-" + to_string(directoryCap) + "-" + to_string(pageCap);
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";

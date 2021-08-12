@@ -22,7 +22,7 @@ void __f(const char *names, Arg1 &&arg1, Args &&... args) {
 #define oppDir(d) (d + DIMS) % (DIMS * 2)
 
 #define DIMS 2
-#define TOLERANCE 0.01
+#define TOLERANCE 0.1
 #define V 0
 #define H 1
 
@@ -90,7 +90,8 @@ double Node::minSqrDist(array<float, 4> r) const {
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void Node::fission(Node *parent, int pageCap) {
-    vector<Node *> pages = splitPage(parent, pageCap);
+    long splitPos = pageCap * floor(ceil(points->size() / float(pageCap)) / 2);
+    vector<Node *> pages = splitPage(parent, splitPos);
     for (auto page : pages) {
         if (page->points->size() > pageCap) {
             page->fission(parent, pageCap);
@@ -116,7 +117,7 @@ bool Node::insertPt(array<float, 2> p, Node *parent, int pageCap, int directoryC
     if (points) {
         points->emplace_back(p);
         if (points->size() > pageCap)
-            newNodes = splitPage(parent, pageCap);
+            newNodes = splitPage(parent, points->size() / 2);
     } else {
         for (uint i = 0; i < contents->size(); i++) {
             if (Node *cn = contents.value()[i]; cn->containsPt(p)) {
@@ -136,10 +137,17 @@ bool Node::insertPt(array<float, 2> p, Node *parent, int pageCap, int directoryC
                         while (height < targetHeight) {
                             fusion(this, directoryCap);
                             height++;
+                            trace(height);
                         }
+                        N = pointCount();
+                        P = pageCount();
+                        float newFat = (P / ceil(N / float(pageCap))) - 1;
+                        // trace(height, fat, newFat);
                     }
-                    if (contents->size() > directoryCap)
+                    if (contents->size() > directoryCap) {
+                        // cerr << "Splitting the directory" << endl;
                         newNodes = splitDirectory(parent);
+                    }
                 }
                 break;
             }
@@ -149,6 +157,7 @@ bool Node::insertPt(array<float, 2> p, Node *parent, int pageCap, int directoryC
         if (this == parent) {
             parent->contents->clear();
             parent->height++;
+            trace(parent->height);
         }
         for (auto cn : newNodes)
             parent->contents->emplace_back(cn);
@@ -179,7 +188,7 @@ int Node::rangeSearch(array<float, 4> query, map<string, double> &stats) {
     int totalPoints = 0;
     if (points) {
         stats["io"]++;
-        totalPoints += scan(query);
+        // totalPoints += scan(query);
     } else {
         for (auto cn : contents.value())
             if (cn->overlap(query))
@@ -243,13 +252,7 @@ vector<Node *> Node::splitDirectory(Node *pn) {
     return nodes;
 }
 
-vector<Node *> Node::splitPage(Node *pn, int pageCap) {
-    // cerr << "Get Splits" << endl;
-    long N = points->size();
-    /* long splitPos = N / 2;
-    if (N > 2 * pageCap)
-        splitPos = pageCap * floor(ceil(N / float(pageCap)) / 2); */
-    long splitPos = pageCap * floor(ceil(N / float(pageCap)) / 2);
+vector<Node *> Node::splitPage(Node *pn, long splitPos) {
     bool axis = (rect[2] - rect[0]) < (rect[3] - rect[1]);
     sort(all(points.value()),
          [axis](const array<float, 2> &l, const array<float, 2> &r) { return l[axis] < r[axis]; });

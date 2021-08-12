@@ -120,7 +120,7 @@ void PageMin::deleteQuery(array<float, 2> p, map<string, double> &stats) {
 
 void PageMin::rangeQuery(array<float, 4> query, map<string, double> &stats) {
     int pointCount = root->rangeSearch(query, stats);
-    trace(pointCount);
+    // trace(pointCount);
 }
 
 typedef struct knnPoint {
@@ -183,13 +183,13 @@ void PageMin::kNNQuery(array<float, 2> p, map<string, double> &stats, int k) {
             break;
     }
 
-    double sqrDist;
+    /* double sqrDist;
     while (!knnPts.empty()) {
         p = knnPts.top().pt;
         sqrDist = knnPts.top().dist;
         knnPts.pop();
         trace(p[0], p[1], sqrDist);
-    }
+    } */
 }
 
 int PageMin::size(map<string, double> &stats) const {

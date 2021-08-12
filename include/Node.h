@@ -37,7 +37,7 @@ public:
     int scan(array<float, 4>) const;
     int size() const;
     vector<Node*> splitDirectory(Node *);
-    vector<Node*> splitPage(Node *, int pageCap);
+    vector<Node*> splitPage(Node *, long);
     int unbind();
 
     ~Node();
