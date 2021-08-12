@@ -28,17 +28,17 @@ public:
     bool overlap(array<float, 4>) const;
 
     // Node methods
-    /* void flush();
-    long pageCount() const;
-    long pointCount() const; */
     void fission(Node *, int);
     void fusion(Node *, int);
     bool insertPt(array<float, 2> p, Node *, int, int);
+    long pageCount() const;
+    long pointCount() const;
     int rangeSearch(array<float, 4>, map<string, double> &);
     int scan(array<float, 4>) const;
     int size() const;
     vector<Node*> splitDirectory(Node *);
     vector<Node*> splitPage(Node *, int pageCap);
+    int unbind();
 
     ~Node();
 };

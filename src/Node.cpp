@@ -17,11 +17,12 @@ void __f(const char *names, Arg1 &&arg1, Args &&... args) {
 #endif
 
 #define all(c) c.begin(), c.end()
-#define DIMS 2
 #define dist(x1, y1, x2, y2) (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)
 #define distManhattan(x1, y1, x2, y2) std::abs(x1 - x2) + std::abs(y1 - y2)
 #define oppDir(d) (d + DIMS) % (DIMS * 2)
 
+#define DIMS 2
+#define TOLERANCE 0.01
 #define V 0
 #define H 1
 
@@ -88,36 +89,6 @@ double Node::minSqrDist(array<float, 4> r) const {
 // Node Methods
 /////////////////////////////////////////////////////////////////////////////////////////
 
-/* void Node::flush() {
-    points = vector<array<float, 2>>();
-    for (auto node : contents.value()) {
-        if (node->contents)
-            node->flush();
-        points->insert(points->end(), all(node->points.value()));
-        delete node;
-    }
-    contents->clear();
-    contents.reset();
-}
-
-long Node::pageCount() const {
-    if (points)
-        return 1;
-    long totalPages = 0;
-    for (auto node : contents.value())
-        totalPages += node->pageCount();
-    return totalPages;
-}
-
-long Node::pointCount() const {
-    if (points)
-        return points->size();
-    long totalPoints = 0;
-    for (auto node : contents.value())
-        totalPoints += node->pointCount();
-    return totalPoints;
-} */
-
 void Node::fission(Node *parent, int pageCap) {
     vector<Node *> pages = splitPage(parent, pageCap);
     for (auto page : pages) {
@@ -152,6 +123,21 @@ bool Node::insertPt(array<float, 2> p, Node *parent, int pageCap, int directoryC
                 if (cn->insertPt(p, this, pageCap, directoryCap)) {
                     contents->erase(contents->begin() + i);
                     delete cn;
+                    long N = pointCount();
+                    long P = pageCount();
+                    if (float fat = (P / ceil(N / float(pageCap))) - 1; fat > TOLERANCE) {
+                        int targetHeight = unbind();
+                        contents->clear();
+                        splits->clear();
+                        fission(this, pageCap);
+                        height = 1;
+                        points->clear();
+                        points.reset();
+                        while (height < targetHeight) {
+                            fusion(this, directoryCap);
+                            height++;
+                        }
+                    }
                     if (contents->size() > directoryCap)
                         newNodes = splitDirectory(parent);
                 }
@@ -169,6 +155,24 @@ bool Node::insertPt(array<float, 2> p, Node *parent, int pageCap, int directoryC
         return true;
     }
     return false;
+}
+
+long Node::pageCount() const {
+    if (points)
+        return 1;
+    long totalPages = 0;
+    for (auto node : contents.value())
+        totalPages += node->pageCount();
+    return totalPages;
+}
+
+long Node::pointCount() const {
+    if (points)
+        return points->size();
+    long totalPoints = 0;
+    for (auto node : contents.value())
+        totalPoints += node->pointCount();
+    return totalPoints;
 }
 
 int Node::rangeSearch(array<float, 4> query, map<string, double> &stats) {
@@ -271,11 +275,25 @@ vector<Node *> Node::splitPage(Node *pn, int pageCap) {
     return pages;
 }
 
+int Node::unbind() {
+    int height = 1;
+    points = vector<array<float, 2>>();
+    for (auto node : contents.value()) {
+        if (node->contents)
+            height = node->unbind() + 1;
+        points->insert(points->end(), all(node->points.value()));
+        delete node;
+    }
+    return height;
+}
+
 Node::~Node() {
     if (points) {
         points->clear();
         points.reset();
     } else {
+        splits->clear();
+        splits.reset();
         contents->clear();
         contents.reset();
     }
