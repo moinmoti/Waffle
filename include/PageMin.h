@@ -9,6 +9,7 @@ using namespace std;
 class PageMin {
 
 public:
+    // long inserted;
     int directoryCap;
     int pageCap;
     Node *root;

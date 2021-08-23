@@ -4,7 +4,7 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 
-height = 0
+height = 1
 nodes = []
 with open("PM.csv") as f:
     for i, line in enumerate(f):

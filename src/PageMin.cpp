@@ -65,6 +65,7 @@ void PageMin::snapshot() const {
 void PageMin::bulkload(string filename, long limit) {
     string line;
     ifstream file(filename);
+    // inserted = 0;
 
     int i = 0;
     vector<array<float, 2>> Points;
@@ -75,7 +76,7 @@ void PageMin::bulkload(string filename, long limit) {
             int id;
             float lat, lon;
             istringstream buf(line);
-            buf >> id >> lat >> lon;
+            buf >> id >> lon >> lat;
             array pt{lon, lat};
             Points.emplace_back(pt);
             if (++i >= limit)
@@ -102,7 +103,16 @@ void PageMin::bulkload(string filename, long limit) {
 }
 
 void PageMin::insertQuery(array<float, 2> p, map<string, double> &stats) {
-    root->insertPt(p, root, pageCap, directoryCap);
+    root->insertPt(p, pageCap, directoryCap);
+    if (root->contents->size() > directoryCap) {
+        vector<Node *> newNodes = root->splitDirectory(root);
+        for (auto node : newNodes)
+            root->contents->emplace_back(node);
+        root->height++;
+    }
+    // inserted++;
+    /* if (inserted > 9e6)
+        trace(inserted); */
 }
 
 void PageMin::deleteQuery(array<float, 2> p, map<string, double> &stats) {

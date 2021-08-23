@@ -112,58 +112,66 @@ void Node::fusion(Node *parent, int directoryCap) {
     }
 }
 
-bool Node::insertPt(array<float, 2> p, Node *parent, int pageCap, int directoryCap) {
-    vector<Node *> newNodes;
-    if (points) {
-        points->emplace_back(p);
-        if (points->size() > pageCap)
-            newNodes = splitPage(parent, points->size() / 2);
-    } else {
-        for (uint i = 0; i < contents->size(); i++) {
-            if (Node *cn = contents.value()[i]; cn->containsPt(p)) {
-                if (cn->insertPt(p, this, pageCap, directoryCap)) {
+void Node::insertPt(array<float, 2> p, int pageCap, int directoryCap) {
+    for (uint i = 0; i < contents->size(); i++) {
+        if (Node *cn = contents.value()[i]; cn->containsPt(p)) {
+            long P = 0;
+            if (cn->points) {
+                cn->points->emplace_back(p);
+                if (cn->points->size() > pageCap)
+                    P = pageCount() + 1;
+            } else {
+                cn->insertPt(p, pageCap, directoryCap);
+                if (cn->contents->size() > directoryCap)
+                    P = pageCount();
+            }
+            if (P != 0) {
+                long N = pointCount();
+                if (float fat = (P / ceil(N / float(pageCap))) - 1; fat > TOLERANCE) {
+                    /* if (inserted > 9e6)
+                        cerr << "Reloading..." << endl; */
+                    int targetHeight = unbind();
+                    contents->clear();
+                    splits->clear();
+                    /* if (inserted > 9e6)
+                        cerr << "Fission..." << endl; */
+                    fission(this, pageCap);
+                    height = 1;
+                    points->clear();
+                    points.reset();
+                    while (height < targetHeight) {
+                        /* if (inserted > 9e6)
+                            cerr << "Fusion..." << endl; */
+                        fusion(this, directoryCap);
+                        height++;
+                        /* if (inserted > 9e6)
+                            trace(height); */
+                    }
+                    /* N = pointCount();
+                    P = pageCount();
+                    float newFat = (P / ceil(N / float(pageCap))) - 1; */
+                } else {
+                    vector<Node *> newNodes;
+                    if (cn->points) {
+                        /* if (inserted > 9e6)
+                            cerr << "Splitting page..." << endl; */
+                        newNodes = cn->splitPage(this, cn->points->size() / 2);
+                    } else {
+                        /* if (inserted > 9e6)
+                            cerr << "Splitting directory..." << endl; */
+                        newNodes = cn->splitDirectory(this);
+                    }
                     contents->erase(contents->begin() + i);
                     delete cn;
-                    long N = pointCount();
-                    long P = pageCount();
-                    if (float fat = (P / ceil(N / float(pageCap))) - 1; fat > TOLERANCE) {
-                        int targetHeight = unbind();
-                        contents->clear();
-                        splits->clear();
-                        fission(this, pageCap);
-                        height = 1;
-                        points->clear();
-                        points.reset();
-                        while (height < targetHeight) {
-                            fusion(this, directoryCap);
-                            height++;
-                            trace(height);
-                        }
-                        N = pointCount();
-                        P = pageCount();
-                        float newFat = (P / ceil(N / float(pageCap))) - 1;
-                        // trace(height, fat, newFat);
-                    }
-                    if (contents->size() > directoryCap) {
-                        // cerr << "Splitting the directory" << endl;
-                        newNodes = splitDirectory(parent);
-                    }
+                    for (auto node : newNodes)
+                        contents->emplace_back(node);
                 }
-                break;
+                /* if (inserted > 9e6)
+                    cerr << "Done" << endl; */
             }
+            break;
         }
     }
-    if (!newNodes.empty()) {
-        if (this == parent) {
-            parent->contents->clear();
-            parent->height++;
-            trace(parent->height);
-        }
-        for (auto cn : newNodes)
-            parent->contents->emplace_back(cn);
-        return true;
-    }
-    return false;
 }
 
 long Node::pageCount() const {

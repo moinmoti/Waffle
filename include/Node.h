@@ -30,7 +30,7 @@ public:
     // Node methods
     void fission(Node *, int);
     void fusion(Node *, int);
-    bool insertPt(array<float, 2> p, Node *, int, int);
+    void insertPt(array<float, 2> p, int, int);
     long pageCount() const;
     long pointCount() const;
     int rangeSearch(array<float, 4>, map<string, double> &);

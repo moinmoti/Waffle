@@ -21,7 +21,7 @@ void __f(const char *names, Arg1 &&arg1, Args &&... args) {
 #define trace(...)
 #endif
 
-void createQuerySet(string fileName, vector<tuple<char, float, float, float>> &queryArray) {
+void createQuerySet(string fileName, vector<tuple<char, vector<float>, float>> &queryArray) {
     cout << "Begin query creation for PageMin" << endl;
     string line;
     int i = 0;
@@ -30,11 +30,18 @@ void createQuerySet(string fileName, vector<tuple<char, float, float, float>> &q
     if (file.is_open()) {
         // getline(file, line); // Skip the header line
         while (getline(file, line)) {
-            char type;
-            float lat, lon, info;
-            istringstream buf(line);
-            buf >> type >> lat >> lon >> info;
-            queryArray.emplace_back(make_tuple(type, lat, lon, info));
+            char type = line[line.find_first_not_of(" ")];
+            vector<float> q;
+            line = line.substr(line.find_first_of(type) + 1);
+            const char *cs = line.c_str();
+            char *end;
+            int params = (type == 'r') ? 4 : 2;
+            for (uint d = 0; d < params; d++) {
+                q.emplace_back(strtof(cs, &end));
+                cs = end;
+            }
+            float info = strtof(cs, &end);
+            queryArray.emplace_back(make_tuple(type, q, info));
             i++;
         }
         file.close();
@@ -42,11 +49,11 @@ void createQuerySet(string fileName, vector<tuple<char, float, float, float>> &q
     cout << "Finish query creation for PageMin" << endl;
 }
 
-void knnQuery(tuple<char, float, float, float> q, PageMin *index, map<string, double> &knnLog) {
+void knnQuery(tuple<char, vector<float>, float> q, PageMin *index, map<string, double> &knnLog) {
     array<float, 2> p;
-    p[0] = get<2>(q); // Inserting longitude first
-    p[1] = get<1>(q); // Inserting latitude second
-    int k = get<3>(q);
+    for (uint i = 0; i < p.size(); i++)
+        p[i] = get<1>(q)[i];
+    int k = get<2>(q);
 
     // cerr << "Points: " << p[0] << " | " << p[1] << endl;
 
@@ -63,17 +70,12 @@ void knnQuery(tuple<char, float, float, float> q, PageMin *index, map<string, do
     knnLog["count " + to_string(k)]++;
 }
 
-void rangeQuery(tuple<char, float, float, float> q, PageMin *index, array<float, 4> boundary,
+void rangeQuery(tuple<char, vector<float>, float> q, PageMin *index, array<float, 4> boundary,
                 map<string, double> &rangeLog) {
     array<float, 4> query;
-    float rs;
-
-    query[0] = get<2>(q) - 0.01; // Inserting longitude first
-    query[1] = get<1>(q) - 0.01; // Inserting latitude second
-    rs = get<3>(q);
-
-    query[2] = min(boundary[2], query[0] + rs * (boundary[2] + abs(boundary[0])));
-    query[3] = min(boundary[3], query[1] + rs * (boundary[3] + abs(boundary[1])));
+    for (uint i = 0; i < query.size(); i++)
+        query[i] = get<1>(q)[i];
+    float rs = get<2>(q);
 
     map<string, double> stats;
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
@@ -85,13 +87,12 @@ void rangeQuery(tuple<char, float, float, float> q, PageMin *index, array<float,
     rangeLog["count " + to_string(rs)]++;
 }
 
-void insertQuery(tuple<char, float, float, float> q, PageMin *index,
+void insertQuery(tuple<char, vector<float>, float> q, PageMin *index,
                  map<string, double> &insertLog) {
     array<float, 2> p;
-    int id;
-    p[0] = get<2>(q); // Inserting longitude first
-    p[1] = get<1>(q); // Inserting latitude second
-    id = get<3>(q);
+    for (uint i = 0; i < p.size(); i++)
+        p[i] = get<1>(q)[i];
+    int id = get<2>(q);
 
     map<string, double> stats;
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
@@ -100,13 +101,12 @@ void insertQuery(tuple<char, float, float, float> q, PageMin *index,
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
 }
 
-void deleteQuery(tuple<char, float, float, float> q, PageMin *index,
+void deleteQuery(tuple<char, vector<float>, float> q, PageMin *index,
                  map<string, double> &deleteLog) {
     array<float, 2> p;
-    int id;
-    p[0] = get<2>(q); // Inserting longitude first
-    p[1] = get<1>(q); // Inserting latitude second
-    id = get<3>(q);
+    for (uint i = 0; i < p.size(); i++)
+        p[i] = get<1>(q)[i];
+    int id = get<2>(q);
 
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
     map<string, double> stats;
@@ -115,7 +115,7 @@ void deleteQuery(tuple<char, float, float, float> q, PageMin *index,
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
 }
 
-void evaluate(PageMin *index, vector<tuple<char, float, float, float>> queryArray,
+void evaluate(PageMin *index, vector<tuple<char, vector<float>, float>> queryArray,
               array<float, 4> boundary, string logFile) {
     map<string, double> deleteLog, insertLog, rangeLog, knnLog;
 
@@ -178,7 +178,6 @@ void evaluate(PageMin *index, vector<tuple<char, float, float, float>> queryArra
     log.close();
 }
 
-// main with arguments to be called by python wrapper
 int main(int argCount, char **args) {
     map<string, string> config;
     string projectPath = string(args[1]);
@@ -195,7 +194,6 @@ int main(int argCount, char **args) {
     string prefix = expPath + queryType + "/";
     string queryFile = projectPath + "/data/ships-dinos/Queries/" + queryType;
     string dataFile = projectPath + "/data/ships-dinos/ships1e8.txt";
-    // vector<int> directoryCap = {5, 10, 15, 20, 25, 50, 100, 150, 200};
     int offset = 0;
     array<float, 4> boundary{-180.0, -90.0, 180.0, 90.0};
 
@@ -222,7 +220,7 @@ int main(int argCount, char **args) {
     log << "No. of pages: " << stats["pages"] << endl;
     log << "No. of directories: " << stats["directories"] << endl;
 
-    vector<tuple<char, float, float, float>> queryArray;
+    vector<tuple<char, vector<float>, float>> queryArray;
     createQuerySet(queryFile, queryArray);
 
     cout << "---Evaluation--- " << endl;
