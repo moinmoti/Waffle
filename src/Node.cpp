@@ -128,46 +128,31 @@ void Node::insertPt(array<float, 2> p, int pageCap, int directoryCap) {
             if (P != 0) {
                 long N = pointCount();
                 if (float fat = (P / ceil(N / float(pageCap))) - 1; fat > TOLERANCE) {
-                    /* if (inserted > 9e6)
-                        cerr << "Reloading..." << endl; */
                     int targetHeight = unbind();
                     contents->clear();
                     splits->clear();
-                    /* if (inserted > 9e6)
-                        cerr << "Fission..." << endl; */
                     fission(this, pageCap);
                     height = 1;
                     points->clear();
                     points.reset();
                     while (height < targetHeight) {
-                        /* if (inserted > 9e6)
-                            cerr << "Fusion..." << endl; */
                         fusion(this, directoryCap);
                         height++;
-                        /* if (inserted > 9e6)
-                            trace(height); */
                     }
                     /* N = pointCount();
                     P = pageCount();
                     float newFat = (P / ceil(N / float(pageCap))) - 1; */
                 } else {
                     vector<Node *> newNodes;
-                    if (cn->points) {
-                        /* if (inserted > 9e6)
-                            cerr << "Splitting page..." << endl; */
+                    if (cn->points)
                         newNodes = cn->splitPage(this, cn->points->size() / 2);
-                    } else {
-                        /* if (inserted > 9e6)
-                            cerr << "Splitting directory..." << endl; */
+                    else
                         newNodes = cn->splitDirectory(this);
-                    }
                     contents->erase(contents->begin() + i);
                     delete cn;
                     for (auto node : newNodes)
                         contents->emplace_back(node);
                 }
-                /* if (inserted > 9e6)
-                    cerr << "Done" << endl; */
             }
             break;
         }

@@ -65,7 +65,6 @@ void PageMin::snapshot() const {
 void PageMin::bulkload(string filename, long limit) {
     string line;
     ifstream file(filename);
-    // inserted = 0;
 
     int i = 0;
     vector<array<float, 2>> Points;
@@ -110,9 +109,6 @@ void PageMin::insertQuery(array<float, 2> p, map<string, double> &stats) {
             root->contents->emplace_back(node);
         root->height++;
     }
-    // inserted++;
-    /* if (inserted > 9e6)
-        trace(inserted); */
 }
 
 void PageMin::deleteQuery(array<float, 2> p, map<string, double> &stats) {
@@ -178,8 +174,8 @@ void PageMin::kNNQuery(array<float, 2> p, map<string, double> &stats, int k) {
                 }
                 stats["io"]++;
             } else {
+                minDist = knnPts.top().dist;
                 for (auto cn : node->contents.value()) {
-                    minDist = knnPts.top().dist;
                     dist = cn->minSqrDist(query);
                     if (dist < minDist) {
                         knnNode kn;
