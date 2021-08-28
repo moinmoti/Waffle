@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(PageMin)
+project(MinPage-Tree)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -7,9 +7,9 @@ set(CMAKE_BUILD_TYPE Release)
 
 set(CMAKE_CXX_FLAGS "-O2")
 
-add_executable(PageMin
+add_executable(MPT
         src/main.cpp
-        src/PageMin.cpp
+        src/MPT.cpp
         src/Node.cpp)
 
-    target_include_directories(PageMin PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(MPT PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

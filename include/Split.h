@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bits/stdc++.h>
+#include "common.h"
 
 struct Split {
     std::array<float, 2> pt;

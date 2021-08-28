@@ -1,11 +1,7 @@
 #pragma once
 
-#include <bits/stdc++.h>
 #include "Split.h"
-#include <chrono>
-
-using namespace std;
-using namespace chrono;
+#include "common.h"
 
 class Node {
 

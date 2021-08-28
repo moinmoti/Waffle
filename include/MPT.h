@@ -1,20 +1,19 @@
 #pragma once
 
-#include <bits/stdc++.h>
 #include "Node.h"
-#include <chrono>
+#include "common.h"
 
 using namespace std;
 
-class PageMin {
+class MPT {
 
 public:
     int directoryCap;
     int pageCap;
     Node *root;
 
-    PageMin(int, int, array<float, 4>);
-    ~PageMin();
+    MPT(int, int, array<float, 4>);
+    ~MPT();
 
     void snapshot() const;
     void load(string, long);

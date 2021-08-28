@@ -1,32 +1,10 @@
-#include "PageMin.h"
-
-using namespace std;
-using namespace std::chrono;
-
-#define TRACE
-#ifdef TRACE
-#define trace(...) __f(#__VA_ARGS__, __VA_ARGS__)
-template <typename Arg1> void __f(const char *name, Arg1 &&arg1) {
-    cerr << name << " : " << arg1 << endl;
-}
-template <typename Arg1, typename... Args>
-void __f(const char *names, Arg1 &&arg1, Args &&... args) {
-    const char *comma = strchr(names + 1, ',');
-    cerr.write(names, comma - names) << " : " << setw(9) << arg1 << " | ";
-    __f(comma + 1, args...);
-}
-#else
-#define trace(...)
-#endif
-
-#define DIMS 2
-#define all(c) c.begin(), c.end()
+#include "MPT.h"
 
 void printRect(string Rect, array<float, 4> r) {
     cerr << Rect << ": " << r[0] << " | " << r[1] << " | " << r[2] << " | " << r[3] << endl;
 }
 
-PageMin::PageMin(int _pageCap, int _directoryCap, array<float, 4> _boundary) {
+MPT::MPT(int _pageCap, int _directoryCap, array<float, 4> _boundary) {
     pageCap = _pageCap;
     directoryCap = _directoryCap;
 
@@ -35,10 +13,10 @@ PageMin::PageMin(int _pageCap, int _directoryCap, array<float, 4> _boundary) {
     root->height = 0;
 }
 
-PageMin::~PageMin() {}
+MPT::~MPT() {}
 
-void PageMin::snapshot() const {
-    ofstream log("PageMin.csv");
+void MPT::snapshot() const {
+    ofstream log("MPT.csv");
     stack<Node *> toVisit({root});
     Node *directory;
     while (!toVisit.empty()) {
@@ -62,7 +40,7 @@ void PageMin::snapshot() const {
     log.close();
 }
 
-void PageMin::bulkload(string filename, long limit) {
+void MPT::bulkload(string filename, long limit) {
     string line;
     ifstream file(filename);
 
@@ -101,7 +79,7 @@ void PageMin::bulkload(string filename, long limit) {
     }
 }
 
-void PageMin::insertQuery(array<float, 2> p, map<string, double> &stats) {
+void MPT::insertQuery(array<float, 2> p, map<string, double> &stats) {
     root->insertPt(p, pageCap, directoryCap);
     if (root->contents->size() > directoryCap) {
         vector<Node *> newNodes = root->splitDirectory(root);
@@ -111,7 +89,7 @@ void PageMin::insertQuery(array<float, 2> p, map<string, double> &stats) {
     }
 }
 
-void PageMin::deleteQuery(array<float, 2> p, map<string, double> &stats) {
+void MPT::deleteQuery(array<float, 2> p, map<string, double> &stats) {
     Node *node = root;
     while (node->contents) {
         auto cn = node->contents->begin();
@@ -124,24 +102,24 @@ void PageMin::deleteQuery(array<float, 2> p, map<string, double> &stats) {
         node->points->erase(pt);
 }
 
-void PageMin::rangeQuery(array<float, 4> query, map<string, double> &stats) {
+void MPT::rangeQuery(array<float, 4> query, map<string, double> &stats) {
     int pointCount = root->rangeSearch(query, stats);
     trace(pointCount);
 }
 
 typedef struct knnPoint {
     array<float, 2> pt;
-    double dist = FLT_MAX;
+    double dist = numeric_limits<float>::max();
     bool operator<(const knnPoint &second) const { return dist < second.dist; }
 } knnPoint;
 
 typedef struct knnNode {
     Node *sn;
-    double dist = FLT_MAX;
+    double dist = numeric_limits<float>::max();
     bool operator<(const knnNode &second) const { return dist > second.dist; }
 } knnNode;
 
-void PageMin::kNNQuery(array<float, 2> p, map<string, double> &stats, int k) {
+void MPT::kNNQuery(array<float, 2> p, map<string, double> &stats, int k) {
     auto calcSqrDist = [](array<float, 4> x, array<float, 2> y) {
         return pow((x[0] - y[0]), 2) + pow((x[1] - y[1]), 2);
     };
@@ -198,7 +176,7 @@ void PageMin::kNNQuery(array<float, 2> p, map<string, double> &stats, int k) {
     }
 }
 
-int PageMin::size(map<string, double> &stats) const {
+int MPT::size(map<string, double> &stats) const {
     int totalSize = 2 * sizeof(int);
     int pageSize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *);
     int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *);

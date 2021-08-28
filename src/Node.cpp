@@ -1,31 +1,5 @@
 #include "Node.h"
 
-#define TRACE
-#ifdef TRACE
-#define trace(...) __f(#__VA_ARGS__, __VA_ARGS__)
-template <typename Arg1> void __f(const char *name, Arg1 &&arg1) {
-    cerr << name << " : " << arg1 << endl;
-}
-template <typename Arg1, typename... Args>
-void __f(const char *names, Arg1 &&arg1, Args &&... args) {
-    const char *comma = strchr(names + 1, ',');
-    cerr.write(names, comma - names) << " : " << arg1 << " | ";
-    __f(comma + 1, args...);
-}
-#else
-#define trace(...)
-#endif
-
-#define all(c) c.begin(), c.end()
-#define dist(x1, y1, x2, y2) (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)
-#define distManhattan(x1, y1, x2, y2) std::abs(x1 - x2) + std::abs(y1 - y2)
-#define oppDir(d) (d + DIMS) % (DIMS * 2)
-
-#define DIMS 2
-#define TOLERANCE 0.1
-#define V 0
-#define H 1
-
 /////////////////////////////////////////////////////////////////////////////////////////
 // Rectangle Methods
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -35,23 +9,23 @@ void printNode(string str, array<float, 4> r) {
 }
 
 bool Node::overlap(array<float, 4> r) const {
-    for (int i = 0; i < DIMS; i++)
-        if (rect[i] > r[i + DIMS] || r[i] > rect[i + DIMS])
+    for (int i = 0; i < D; i++)
+        if (rect[i] > r[i + D] || r[i] > rect[i + D])
             return false;
     return true;
 }
 
 bool Node::containsPt(array<float, 2> p) const {
     bool result = true;
-    for (int i = 0; i < DIMS; i++)
-        result = result & (rect[i] <= p[i]) & (rect[i + DIMS] >= p[i]);
+    for (int i = 0; i < D; i++)
+        result = result & (rect[i] <= p[i]) & (rect[i + D] >= p[i]);
     return result;
 }
 
 bool Node::inside(array<float, 4> r) const {
     bool result = true;
-    for (int i = 0; i < DIMS; i++)
-        result = result & (rect[i] >= r[i]) & (rect[i + DIMS] <= r[i + DIMS]);
+    for (int i = 0; i < D; i++)
+        result = result & (rect[i] >= r[i]) & (rect[i + D] <= r[i + D]);
     return result;
 }
 
@@ -191,8 +165,8 @@ int Node::rangeSearch(array<float, 4> query, map<string, double> &stats) {
 }
 
 inline bool overlaps(array<float, 4> r, array<float, 2> p) {
-    for (int i = 0; i < DIMS; i++) {
-        if (r[i] > p[i] || p[i] > r[i + DIMS])
+    for (int i = 0; i < D; i++) {
+        if (r[i] > p[i] || p[i] > r[i + D])
             return false;
     }
     return true;
@@ -227,7 +201,7 @@ vector<Node *> Node::splitDirectory(Node *pn) {
         nodes[i] = new Node();
         nodes[i]->height = height;
         nodes[i]->rect = rect;
-        nodes[i]->rect[bestSplit.axis + !i * DIMS] = bestSplit.pt[bestSplit.axis];
+        nodes[i]->rect[bestSplit.axis + !i * D] = bestSplit.pt[bestSplit.axis];
         nodes[i]->contents = vector<Node *>();
         // nodes[i]->contents->reserve(contents->size());
         nodes[i]->splits = vector<Split>();
@@ -260,7 +234,7 @@ vector<Node *> Node::splitPage(Node *pn, long splitPos) {
         pages[i] = new Node();
         pages[i]->height = 0;
         pages[i]->rect = rect;
-        pages[i]->rect[newSplit.axis + !i * DIMS] = newSplit.pt[newSplit.axis];
+        pages[i]->rect[newSplit.axis + !i * D] = newSplit.pt[newSplit.axis];
     }
 
     // Splitting points

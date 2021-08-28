@@ -1,28 +1,7 @@
-#include "PageMin.h"
-#include <bits/stdc++.h>
-#include <chrono>
-
-using namespace std;
-using namespace std::chrono;
-
-#define TRACE
-#ifdef TRACE
-#define trace(...) __f(#__VA_ARGS__, __VA_ARGS__)
-template <typename Arg1> void __f(const char *name, Arg1 &&arg1) {
-    cerr << name << " : " << arg1 << endl;
-}
-template <typename Arg1, typename... Args>
-void __f(const char *names, Arg1 &&arg1, Args &&... args) {
-    const char *comma = strchr(names + 1, ',');
-    cerr.write(names, comma - names) << " : " << arg1 << " | ";
-    __f(comma + 1, args...);
-}
-#else
-#define trace(...)
-#endif
+#include "MPT.h"
 
 void createQuerySet(string fileName, vector<tuple<char, vector<float>, float>> &queryArray) {
-    cout << "Begin query creation for PageMin" << endl;
+    cout << "Begin query creation for MPT" << endl;
     string line;
     int i = 0;
 
@@ -46,10 +25,10 @@ void createQuerySet(string fileName, vector<tuple<char, vector<float>, float>> &
         }
         file.close();
     }
-    cout << "Finish query creation for PageMin" << endl;
+    cout << "Finish query creation for MPT" << endl;
 }
 
-void knnQuery(tuple<char, vector<float>, float> q, PageMin *index, map<string, double> &knnLog) {
+void knnQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, double> &knnLog) {
     array<float, 2> p;
     for (uint i = 0; i < p.size(); i++)
         p[i] = get<1>(q)[i];
@@ -70,7 +49,7 @@ void knnQuery(tuple<char, vector<float>, float> q, PageMin *index, map<string, d
     knnLog["count " + to_string(k)]++;
 }
 
-void rangeQuery(tuple<char, vector<float>, float> q, PageMin *index, array<float, 4> boundary,
+void rangeQuery(tuple<char, vector<float>, float> q, MPT *index, array<float, 4> boundary,
                 map<string, double> &rangeLog) {
     array<float, 4> query;
     for (uint i = 0; i < query.size(); i++)
@@ -87,8 +66,7 @@ void rangeQuery(tuple<char, vector<float>, float> q, PageMin *index, array<float
     rangeLog["count " + to_string(rs)]++;
 }
 
-void insertQuery(tuple<char, vector<float>, float> q, PageMin *index,
-                 map<string, double> &insertLog) {
+void insertQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, double> &insertLog) {
     array<float, 2> p;
     for (uint i = 0; i < p.size(); i++)
         p[i] = get<1>(q)[i];
@@ -101,8 +79,7 @@ void insertQuery(tuple<char, vector<float>, float> q, PageMin *index,
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
 }
 
-void deleteQuery(tuple<char, vector<float>, float> q, PageMin *index,
-                 map<string, double> &deleteLog) {
+void deleteQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, double> &deleteLog) {
     array<float, 2> p;
     for (uint i = 0; i < p.size(); i++)
         p[i] = get<1>(q)[i];
@@ -115,7 +92,7 @@ void deleteQuery(tuple<char, vector<float>, float> q, PageMin *index,
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
 }
 
-void evaluate(PageMin *index, vector<tuple<char, vector<float>, float>> queryArray,
+void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray,
               array<float, 4> boundary, string logFile) {
     map<string, double> deleteLog, insertLog, rangeLog, knnLog;
 
@@ -170,7 +147,7 @@ void evaluate(PageMin *index, vector<tuple<char, vector<float>, float>> queryArr
     log << endl << "************************************************" << endl;
     map<string, double> stats;
     float indexSize = index->size(stats);
-    log << "PageMin size in MB: " << float(indexSize / 1e6) << endl;
+    log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
     // index.snapshot();
     log << "No. of pages: " << stats["pages"] << endl;
     log << "No. of directories: " << stats["directories"] << endl;
@@ -206,18 +183,18 @@ int main(int argCount, char **args) {
     if (!log.is_open())
         cout << "Unable to open log.txt";
     high_resolution_clock::time_point start = high_resolution_clock::now();
-    cout << "Defining PageMin..." << endl;
-    PageMin index = PageMin(pageCap, directoryCap, boundary);
-    cout << "Bulkloading PageMin..." << endl;
+    cout << "Defining MPT..." << endl;
+    MPT index = MPT(pageCap, directoryCap, boundary);
+    cout << "Bulkloading MPT..." << endl;
     index.bulkload(dataFile, limit);
     double hTreeCreationTime =
         duration_cast<microseconds>(high_resolution_clock::now() - start).count();
-    log << "PageMin Creation Time: " << hTreeCreationTime << endl;
+    log << "MPT Creation Time: " << hTreeCreationTime << endl;
     log << "Directory Capacity: " << directoryCap << endl;
     log << "Page Capacity: " << pageCap << endl;
     map<string, double> stats;
     float indexSize = index.size(stats);
-    log << "PageMin size in MB: " << float(indexSize / 1e6) << endl;
+    log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
     // index.snapshot();
     log << "No. of pages: " << stats["pages"] << endl;
     log << "No. of directories: " << stats["directories"] << endl;
