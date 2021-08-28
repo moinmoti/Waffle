@@ -181,7 +181,7 @@ int Node::rangeSearch(array<float, 4> query, map<string, double> &stats) {
     int totalPoints = 0;
     if (points) {
         stats["io"]++;
-        // totalPoints += scan(query);
+        totalPoints += scan(query);
     } else {
         for (auto cn : contents.value())
             if (cn->overlap(query))

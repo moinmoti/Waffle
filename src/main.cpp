@@ -184,14 +184,16 @@ int main(int argCount, char **args) {
     string queryType = string(args[2]);
     int directoryCap = stoi(string(args[3]));
     int pageCap = stoi(string(args[4]));
-    long insertions = 1e7;
-    long limit = 1e8 - insertions;
+    long insertions = 1e6;
+    long limit = 1e7 - insertions;
     /* string sign = "-I1e" + to_string(int(log10(insertions))) + "-" + to_string(directoryCap) +
        "-" + to_string(pageCap); */
-    string sign = "-1e8-" + to_string(directoryCap) + "-" + to_string(pageCap);
+    string sign = "-1e7-" + to_string(directoryCap) + "-" + to_string(pageCap);
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";
+    /* string queryFile = projectPath + "/data/ships-dinos/panosTest/" + queryType;
+    string dataFile = projectPath + "/data/ships-dinos/panosTest/shipsSmall"; */
     string queryFile = projectPath + "/data/ships-dinos/Queries/" + queryType;
     string dataFile = projectPath + "/data/ships-dinos/ships1e8.txt";
     int offset = 0;
