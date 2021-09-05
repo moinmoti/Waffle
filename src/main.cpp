@@ -51,8 +51,7 @@ void knnQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, doubl
     knnLog["count " + to_string(k)]++;
 }
 
-void rangeQuery(tuple<char, vector<float>, float> q, MPT *index, array<float, 4> boundary,
-                map<string, double> &rangeLog) {
+void rangeQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, double> &rangeLog) {
     array<float, 4> query;
     for (uint i = 0; i < query.size(); i++)
         query[i] = get<1>(q)[i];
@@ -94,8 +93,7 @@ void deleteQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, do
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
 }
 
-void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray,
-              array<float, 4> boundary, string logFile) {
+void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, string logFile) {
     map<string, double> deleteLog, insertLog, rangeLog, knnLog;
 
     cout << "Begin Querying..." << endl;
@@ -105,7 +103,7 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray,
             knnLog["count"]++;
             // trace(knnLog["count"]);
         } else if (get<0>(q) == 'r') {
-            rangeQuery(q, index, boundary, rangeLog);
+            rangeQuery(q, index, rangeLog);
             rangeLog["count"]++;
             // trace(rangeLog["count"]);
         } else if (get<0>(q) == 'i') {
@@ -172,11 +170,11 @@ int main(int argCount, char **args) {
     string queryType = string(args[2]);
     int directoryCap = stoi(string(args[3]));
     int pageCap = stoi(string(args[4]));
-    long insertions = 5e7;
-    long limit = 1e8 - insertions;
+    long insertions = 0;
+    long limit = 1e7 - insertions;
     /* string sign = "-I1e" + to_string(int(log10(insertions))) + "-" + to_string(directoryCap) +
        "-" + to_string(pageCap); */
-    string sign = "-1e8-" + to_string(directoryCap) + "-" + to_string(pageCap);
+    string sign = "-1e7-" + to_string(directoryCap) + "-" + to_string(pageCap);
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";
@@ -185,7 +183,6 @@ int main(int argCount, char **args) {
     /* string queryFile = projectPath + "/data/OSM-USA/" + queryType;
     string dataFile = projectPath + "/data/OSM-USA/osm-usa-10mil"; */
     int offset = 0;
-    array<float, 4> boundary{-180.0, -90.0, 180.0, 90.0};
 
     cout << "---Generation--- " << endl;
 
@@ -195,7 +192,7 @@ int main(int argCount, char **args) {
         cout << "Unable to open log.txt";
     high_resolution_clock::time_point start = high_resolution_clock::now();
     cout << "Defining MPT..." << endl;
-    MPT index = MPT(pageCap, directoryCap, boundary);
+    MPT index = MPT(pageCap, directoryCap);
     cout << "Bulkloading MPT..." << endl;
     index.bulkload(dataFile, limit);
     double hTreeCreationTime =
@@ -214,7 +211,7 @@ int main(int argCount, char **args) {
     vector<tuple<char, vector<float>, float>> queryArray;
     createQuerySet(queryFile, queryArray);
 
-    cout << "---Evaluation--- " << endl;
-    evaluate(&index, queryArray, boundary, logFile);
+    /* cout << "---Evaluation--- " << endl;
+    evaluate(&index, queryArray, logFile); */
     return 0;
 }

@@ -6,8 +6,13 @@
 class Node {
 
 public:
-    int height;
-    array<float, 4> rect; // xlow, ylow, xhigh, yhigh
+    int height = 0;
+    array<float, 4> rect = {
+        numeric_limits<float>::max(),
+        numeric_limits<float>::max(),
+        numeric_limits<float>::lowest(),
+        numeric_limits<float>::lowest(),
+    };
 
     // Directory specific members
     optional<vector<Node*>> contents;
@@ -22,6 +27,7 @@ public:
     bool inside(array<float, 4>) const;
     double minSqrDist(array<float, 4>) const;
     bool overlap(array<float, 4>) const;
+    void updateRect(array<float, 2>);
 
     // Node methods
     void fission(Node *, int);

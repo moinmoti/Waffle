@@ -8,13 +8,6 @@ void printNode(string str, array<float, 4> r) {
     cerr << str << ": " << r[0] << " | " << r[1] << " | " << r[2] << " | " << r[3] << endl;
 }
 
-bool Node::overlap(array<float, 4> r) const {
-    for (int i = 0; i < D; i++)
-        if (rect[i] > r[i + D] || r[i] > rect[i + D])
-            return false;
-    return true;
-}
-
 bool Node::containsPt(array<float, 2> p) const {
     bool result = true;
     for (int i = 0; i < D; i++)
@@ -59,6 +52,23 @@ double Node::minSqrDist(array<float, 4> r) const {
     return 0;
 }
 
+bool Node::overlap(array<float, 4> r) const {
+    for (int i = 0; i < D; i++)
+        if (rect[i] > r[i + D] || r[i] > rect[i + D])
+            return false;
+    return true;
+}
+
+void Node::updateRect(array<float, 2> p) {
+    if (rect[0] > p[0])
+        rect[0] = p[0];
+    if (rect[1] > p[1])
+        rect[1] = p[1];
+    if (rect[2] < p[0])
+        rect[2] = p[0];
+    if (rect[3] < p[1])
+        rect[3] = p[1];
+}
 /////////////////////////////////////////////////////////////////////////////////////////
 // Node Methods
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -195,20 +205,29 @@ int Node::size() const {
 }
 
 vector<Node *> Node::splitDirectory(Node *pn) {
-    vector<Node *> nodes(2);
+    vector<Node *> nodes = {new Node(), new Node()};
     Split bestSplit = splits.value()[0];
-    for (int i = 0; i < nodes.size(); i++) {
-        nodes[i] = new Node();
-        nodes[i]->height = height;
-        nodes[i]->rect = rect;
-        nodes[i]->rect[bestSplit.axis + !i * D] = bestSplit.pt[bestSplit.axis];
-        nodes[i]->contents = vector<Node *>();
-        // nodes[i]->contents->reserve(contents->size());
-        nodes[i]->splits = vector<Split>();
+    for (auto node : nodes) {
+        node->height = height;
+        node->contents = vector<Node *>();
+        node->splits = vector<Split>();
     }
-    for (auto cn : contents.value())
-        nodes[cn->getCenter()[bestSplit.axis] > bestSplit.pt[bestSplit.axis]]
-            ->contents->emplace_back(cn);
+
+    // cerr << "Make bounding rectangles" << endl;
+    for (auto cn : contents.value()) {
+        bool side = cn->getCenter()[bestSplit.axis] > bestSplit.pt[bestSplit.axis];
+        nodes[side]->contents->emplace_back(cn);
+        if (nodes[side]->rect[0] > cn->rect[0])
+            nodes[side]->rect[0] = cn->rect[0];
+        if (nodes[side]->rect[1] > cn->rect[1])
+            nodes[side]->rect[1] = cn->rect[1];
+        if (nodes[side]->rect[2] < cn->rect[2])
+            nodes[side]->rect[2] = cn->rect[2];
+        if (nodes[side]->rect[3] < cn->rect[3])
+            nodes[side]->rect[3] = cn->rect[3];
+    }
+
+    // cerr << "Distribute splits" << endl;
     for (auto isplit = next(splits->begin()); isplit != splits->end(); isplit++)
         nodes[(*isplit).pt[bestSplit.axis] > bestSplit.pt[bestSplit.axis]]->splits->emplace_back(
             *isplit);
@@ -229,17 +248,25 @@ vector<Node *> Node::splitPage(Node *pn, long splitPos) {
     newSplit.pt[!axis] = getCenter()[!axis];
 
     // cerr << "Create new pages" << endl;
-    vector<Node *> pages(2);
-    for (int i = 0; i < pages.size(); i++) {
-        pages[i] = new Node();
-        pages[i]->height = 0;
-        pages[i]->rect = rect;
-        pages[i]->rect[newSplit.axis + !i * D] = newSplit.pt[newSplit.axis];
-    }
+    vector<Node *> pages = {new Node(), new Node()};
 
     // Splitting points
     pages[0]->points = vector<array<float, 2>>(points->begin(), points->begin() + splitPos);
     pages[1]->points = vector<array<float, 2>>(points->begin() + splitPos, points->end());
+
+    // cerr << "Make bounding rectangles" << endl;
+    for (auto page : pages) {
+        for (auto p : page->points.value()) {
+            if (page->rect[0] > p[0])
+                page->rect[0] = p[0];
+            if (page->rect[1] > p[1])
+                page->rect[1] = p[1];
+            if (page->rect[2] < p[0])
+                page->rect[2] = p[0];
+            if (page->rect[3] < p[1])
+                page->rect[3] = p[1];
+        }
+    }
 
     pn->splits->emplace_back(newSplit);
     return pages;

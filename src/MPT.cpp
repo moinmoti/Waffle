@@ -4,13 +4,10 @@ void printRect(string Rect, array<float, 4> r) {
     cerr << Rect << ": " << r[0] << " | " << r[1] << " | " << r[2] << " | " << r[3] << endl;
 }
 
-MPT::MPT(int _pageCap, int _directoryCap, array<float, 4> _boundary) {
+MPT::MPT(int _pageCap, int _directoryCap) {
     pageCap = _pageCap;
     directoryCap = _directoryCap;
-
     root = new Node();
-    root->rect = _boundary;
-    root->height = 0;
 }
 
 MPT::~MPT() {}
@@ -56,6 +53,14 @@ void MPT::bulkload(string filename, long limit) {
             buf >> id >> lon >> lat;
             array pt{lon, lat};
             Points.emplace_back(pt);
+            if (root->rect[0] > pt[0])
+                root->rect[0] = pt[0];
+            if (root->rect[1] > pt[1])
+                root->rect[1] = pt[1];
+            if (root->rect[2] < pt[0])
+                root->rect[2] = pt[0];
+            if (root->rect[3] < pt[1])
+                root->rect[3] = pt[1];
             if (++i >= limit)
                 break;
         }

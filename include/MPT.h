@@ -12,7 +12,7 @@ public:
     int pageCap;
     Node *root;
 
-    MPT(int, int, array<float, 4>);
+    MPT(int, int);
     ~MPT();
 
     void snapshot() const;
