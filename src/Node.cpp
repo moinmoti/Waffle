@@ -52,6 +52,32 @@ double Node::minSqrDist(array<float, 4> r) const {
     return 0;
 }
 
+double Node::minSqrDist(array<float, 2> q) const {
+    bool left = q[0] < rect[0];
+    bool right = rect[2] < q[0];
+    bool bottom = q[1] < rect[1];
+    bool top = rect[3] < q[1];
+    if (top) {
+        if (left)
+            return dist(rect[0], rect[3], q[0], q[1]);
+        if (right)
+            return dist(rect[2], rect[3], q[0], q[1]);
+        return (q[1] - rect[3]) * (q[1] - rect[3]);
+    }
+    if (bottom) {
+        if (left)
+            return dist(rect[0], rect[1], q[0], q[1]);
+        if (right)
+            return dist(rect[2], rect[1], q[0], q[1]);
+        return (rect[1] - q[1]) * (rect[1] - q[1]);
+    }
+    if (left)
+        return (rect[0] - q[0]) * (rect[0] - q[0]);
+    if (right)
+        return (q[0] - rect[2]) * (q[0] - rect[2]);
+    return 0;
+}
+
 bool Node::overlap(array<float, 4> r) const {
     for (int i = 0; i < D; i++)
         if (rect[i] > r[i + D] || r[i] > rect[i + D])
@@ -96,49 +122,56 @@ void Node::fusion(Node *parent, int directoryCap) {
     }
 }
 
-void Node::insertPt(array<float, 2> p, int pageCap, int directoryCap) {
+void Node::insertPt(array<float, 2> pt, int pageCap, int directoryCap) {
+    int key = -1;
+    double minDist = numeric_limits<float>::max();
     for (uint i = 0; i < contents->size(); i++) {
-        if (Node *cn = contents.value()[i]; cn->containsPt(p)) {
-            long P = 0;
-            if (cn->points) {
-                cn->points->emplace_back(p);
-                if (cn->points->size() > pageCap)
-                    P = pageCount() + 1;
-            } else {
-                cn->insertPt(p, pageCap, directoryCap);
-                if (cn->contents->size() > directoryCap)
-                    P = pageCount();
+        Node *cn = contents.value()[i];
+        if (double dist = cn->minSqrDist(pt); minDist > dist) {
+            minDist = dist;
+            key = i;
+        }
+    }
+    Node *cn = contents.value()[key];
+    if (minDist > 0)
+        cn->updateRect(pt);
+    long P = 0;
+    if (cn->points) {
+        cn->points->emplace_back(pt);
+        if (cn->points->size() > pageCap)
+            P = pageCount() + 1;
+    } else {
+        cn->insertPt(pt, pageCap, directoryCap);
+        if (cn->contents->size() > directoryCap)
+            P = pageCount();
+    }
+    if (P != 0) {
+        long N = pointCount();
+        if (float fat = (P / ceil(N / float(pageCap))) - 1; fat > TOLERANCE) {
+            int targetHeight = unbind();
+            contents->clear();
+            splits->clear();
+            fission(this, pageCap);
+            height = 1;
+            points->clear();
+            points.reset();
+            while (height < targetHeight) {
+                fusion(this, directoryCap);
+                height++;
             }
-            if (P != 0) {
-                long N = pointCount();
-                if (float fat = (P / ceil(N / float(pageCap))) - 1; fat > TOLERANCE) {
-                    int targetHeight = unbind();
-                    contents->clear();
-                    splits->clear();
-                    fission(this, pageCap);
-                    height = 1;
-                    points->clear();
-                    points.reset();
-                    while (height < targetHeight) {
-                        fusion(this, directoryCap);
-                        height++;
-                    }
-                    /* N = pointCount();
-                    P = pageCount();
-                    float newFat = (P / ceil(N / float(pageCap))) - 1; */
-                } else {
-                    vector<Node *> newNodes;
-                    if (cn->points)
-                        newNodes = cn->splitPage(this, cn->points->size() / 2);
-                    else
-                        newNodes = cn->splitDirectory(this);
-                    contents->erase(contents->begin() + i);
-                    delete cn;
-                    for (auto node : newNodes)
-                        contents->emplace_back(node);
-                }
-            }
-            break;
+            /* N = pointCount();
+            P = pageCount();
+            float newFat = (P / ceil(N / float(pageCap))) - 1; */
+        } else {
+            vector<Node *> newNodes;
+            if (cn->points)
+                newNodes = cn->splitPage(this, cn->points->size() / 2);
+            else
+                newNodes = cn->splitDirectory(this);
+            contents->erase(contents->begin() + key);
+            delete cn;
+            for (auto node : newNodes)
+                contents->emplace_back(node);
         }
     }
 }

@@ -84,8 +84,10 @@ void MPT::bulkload(string filename, long limit) {
     }
 }
 
-void MPT::insertQuery(array<float, 2> p, map<string, double> &stats) {
-    root->insertPt(p, pageCap, directoryCap);
+void MPT::insertQuery(array<float, 2> pt, map<string, double> &stats) {
+    if (root->minSqrDist(pt) > 0)
+        root->updateRect(pt);
+    root->insertPt(pt, pageCap, directoryCap);
     if (root->contents->size() > directoryCap) {
         vector<Node *> newNodes = root->splitDirectory(root);
         for (auto node : newNodes)
@@ -124,16 +126,15 @@ typedef struct knnNode {
     bool operator<(const knnNode &second) const { return dist > second.dist; }
 } knnNode;
 
-void MPT::kNNQuery(array<float, 2> p, map<string, double> &stats, int k) {
-    auto calcSqrDist = [](array<float, 4> x, array<float, 2> y) {
+void MPT::kNNQuery(array<float, 2> queryPt, map<string, double> &stats, int k) {
+    auto calcSqrDist = [](array<float, 2> x, array<float, 2> y) {
         return pow((x[0] - y[0]), 2) + pow((x[1] - y[1]), 2);
     };
 
     vector<knnPoint> tempPts(k);
-    array query{p[0], p[1], p[0], p[1]};
     priority_queue<knnPoint, vector<knnPoint>> knnPts(all(tempPts));
     priority_queue<knnNode, vector<knnNode>> unseenNodes;
-    unseenNodes.emplace(knnNode{root, root->minSqrDist(query)});
+    unseenNodes.emplace(knnNode{root, root->minSqrDist(queryPt)});
     double dist, minDist;
     Node *node;
 
@@ -146,7 +147,7 @@ void MPT::kNNQuery(array<float, 2> p, map<string, double> &stats, int k) {
             if (node->points) {
                 for (auto p : node->points.value()) {
                     minDist = knnPts.top().dist;
-                    dist = calcSqrDist(query, p);
+                    dist = calcSqrDist(queryPt, p);
                     if (dist < minDist) {
                         knnPoint kPt;
                         kPt.pt = p;
@@ -159,7 +160,7 @@ void MPT::kNNQuery(array<float, 2> p, map<string, double> &stats, int k) {
             } else {
                 minDist = knnPts.top().dist;
                 for (auto cn : node->contents.value()) {
-                    dist = cn->minSqrDist(query);
+                    dist = cn->minSqrDist(queryPt);
                     if (dist < minDist) {
                         knnNode kn;
                         kn.sn = cn;
@@ -173,6 +174,7 @@ void MPT::kNNQuery(array<float, 2> p, map<string, double> &stats, int k) {
     }
 
     /* double sqrDist;
+    array<float, 2> p;
     while (!knnPts.empty()) {
         p = knnPts.top().pt;
         sqrDist = knnPts.top().dist;

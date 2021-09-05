@@ -26,6 +26,7 @@ public:
     array<float, 2> getCenter() const;
     bool inside(array<float, 4>) const;
     double minSqrDist(array<float, 4>) const;
+    double minSqrDist(array<float, 2>) const;
     bool overlap(array<float, 4>) const;
     void updateRect(array<float, 2>);
 
