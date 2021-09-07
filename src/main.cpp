@@ -109,7 +109,7 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
         } else if (get<0>(q) == 'i') {
             insertQuery(q, index, insertLog);
             insertLog["count"]++;
-            if (long(insertLog["count"]) % long(1e5) == 0)
+            if (long(insertLog["count"]) % long(1e7) == 0)
                 trace(insertLog["count"]);
         } else if (get<0>(q) == 'd') {
             deleteQuery(q, index, deleteLog);
@@ -135,19 +135,18 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
                 l.second = 0;
             }
 
+            /* log << "------------------Delete Queries-------------------" << endl;
+            for (auto &l : deleteLog) {
+                log << l.first << ": " << l.second << endl;
+                l.second = 0;
+            } */
+
             log << "------------------Insert Queries-------------------" << endl;
             for (auto &l : insertLog) {
                 log << l.first << ": " << l.second << endl;
                 l.second = 0;
             }
 
-            log << "------------------Delete Queries-------------------" << endl;
-            for (auto &l : deleteLog) {
-                log << l.first << ": " << l.second << endl;
-                l.second = 0;
-            }
-
-            log << endl << "************************************************" << endl;
             map<string, double> stats;
             float indexSize = index->size(stats);
             log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
@@ -156,13 +155,15 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
             log << "No. of directories: " << stats["directories"] << endl;
             log << "Tolerance: " << TOLERANCE << endl;
 
+            log << endl << "************************************************" << endl;
+
             log.close();
         } else
             cerr << "Invalid Query!!!" << endl;
         // cerr << endl;
     }
     cout << "Finish Querying..." << endl;
-    index->snapshot();
+    // index->snapshot();
 }
 
 int main(int argCount, char **args) {
@@ -172,10 +173,9 @@ int main(int argCount, char **args) {
     int directoryCap = stoi(string(args[3]));
     int pageCap = stoi(string(args[4]));
     long insertions = 0;
-    long limit = 1e8 - insertions;
-    /* string sign = "-I1e" + to_string(int(log10(insertions))) + "-" + to_string(directoryCap) +
-       "-" + to_string(pageCap); */
-    string sign = "-1e8-" + to_string(directoryCap) + "-" + to_string(pageCap);
+    long limit = 1e7 - insertions;
+    string sign = "-1e8-" + to_string(directoryCap);
+    sign += "-T" + to_string(int(100 * TOLERANCE));
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";

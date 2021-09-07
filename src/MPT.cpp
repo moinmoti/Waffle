@@ -74,6 +74,7 @@ void MPT::bulkload(string filename, long limit) {
     root->splits = vector<Split>();
     root->fission(root, pageCap);
     root->height = 1;
+    root->numPoints = root->points->size();
     root->points->clear();
     root->points.reset();
 
@@ -86,12 +87,15 @@ void MPT::bulkload(string filename, long limit) {
 
 void MPT::insertQuery(array<float, 2> pt, map<string, double> &stats) {
     if (root->minSqrDist(pt) > 0)
-        root->updateRect(pt);
+        root->rect = root->getRect(pt);
     root->insertPt(pt, pageCap, directoryCap);
     if (root->contents->size() > directoryCap) {
         vector<Node *> newNodes = root->splitDirectory(root);
-        for (auto node : newNodes)
+        for (auto node : newNodes) {
+            if constexpr (TOLERANCE < 1)
+                node->numPoints = node->pointCount();
             root->contents->emplace_back(node);
+        }
         root->height++;
     }
 }

@@ -15,6 +15,7 @@ public:
     };
 
     // Directory specific members
+    optional<int> numPoints;
     optional<vector<Node*>> contents;
     optional<vector<Split>> splits;
 
@@ -28,7 +29,7 @@ public:
     double minSqrDist(array<float, 4>) const;
     double minSqrDist(array<float, 2>) const;
     bool overlap(array<float, 4>) const;
-    void updateRect(array<float, 2>);
+    array<float, 4> getRect(array<float, 2>);
 
     // Node methods
     void fission(Node *, int);
