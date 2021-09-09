@@ -81,27 +81,55 @@ void Node::fusion(Node *parent, int directoryCap) {
         if (directory->contents->size() > directoryCap) {
             directory->fusion(parent, directoryCap);
             delete directory;
-        } else
+        } else {
+            // if constexpr (TOLERANCE < 1)
+            directory->numPoints = directory->pointCount();
             parent->contents->emplace_back(directory);
+        }
     }
 }
 
 void Node::insertPt(array<float, 2> p, int pageCap, int directoryCap) {
+    // if constexpr (TOLERANCE < 1)
+    numPoints = numPoints.value() + 1;
     for (uint i = 0; i < contents->size(); i++) {
         if (Node *cn = contents.value()[i]; cn->containsPt(p)) {
             long P = 0;
             if (cn->points) {
                 cn->points->emplace_back(p);
-                if (cn->points->size() > pageCap)
-                    P = pageCount() + 1;
+                if (cn->points->size() > pageCap) {
+                    // if constexpr (TOLERANCE < 1)
+                    P = contents->size() + 1;
+                    /* else {
+                        vector<Node *> newNodes;
+                        newNodes = cn->splitPage(this, cn->points->size() / 2);
+                        contents->erase(contents->begin() + i);
+                        delete cn;
+                        for (auto node : newNodes)
+                            contents->emplace_back(node);
+                    } */
+                }
             } else {
                 cn->insertPt(p, pageCap, directoryCap);
-                if (cn->contents->size() > directoryCap)
+                if (cn->contents->size() > directoryCap) {
+                    // if constexpr (TOLERANCE < 1)
                     P = pageCount();
+                    /* else {
+                        vector<Node *> newNodes;
+                        newNodes = cn->splitDirectory(this);
+                        for (auto dir : newNodes)
+                            dir->numPoints = dir->pointCount();
+                        contents->erase(contents->begin() + i);
+                        delete cn;
+                        for (auto node : newNodes)
+                            contents->emplace_back(node);
+                    } */
+                }
             }
             if (P != 0) {
-                long N = pointCount();
-                if (float fat = (P / ceil(N / float(pageCap))) - 1; fat > TOLERANCE) {
+                // long N = pointCount();
+                if (float fat = (P / ceil(numPoints.value() / float(pageCap))) - 1;
+                    fat > TOLERANCE) {
                     int targetHeight = unbind();
                     contents->clear();
                     splits->clear();
@@ -113,15 +141,15 @@ void Node::insertPt(array<float, 2> p, int pageCap, int directoryCap) {
                         fusion(this, directoryCap);
                         height++;
                     }
-                    /* N = pointCount();
-                    P = pageCount();
-                    float newFat = (P / ceil(N / float(pageCap))) - 1; */
                 } else {
                     vector<Node *> newNodes;
                     if (cn->points)
                         newNodes = cn->splitPage(this, cn->points->size() / 2);
-                    else
+                    else {
                         newNodes = cn->splitDirectory(this);
+                        for (auto dir : newNodes)
+                            dir->numPoints = dir->pointCount();
+                    }
                     contents->erase(contents->begin() + i);
                     delete cn;
                     for (auto node : newNodes)

@@ -143,13 +143,12 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray,
                 l.second = 0;
             }
 
-            log << "------------------Delete Queries-------------------" << endl;
+            /* log << "------------------Delete Queries-------------------" << endl;
             for (auto &l : deleteLog) {
                 log << l.first << ": " << l.second << endl;
                 l.second = 0;
-            }
+            } */
 
-            log << endl << "************************************************" << endl;
             map<string, double> stats;
             float indexSize = index->size(stats);
             log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
@@ -157,6 +156,8 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray,
             log << "No. of pages: " << stats["pages"] << endl;
             log << "No. of directories: " << stats["directories"] << endl;
             log << "Tolerance: " << TOLERANCE << endl;
+
+            log << endl << "************************************************" << endl;
 
             log.close();
         } else
@@ -172,11 +173,12 @@ int main(int argCount, char **args) {
     string queryType = string(args[2]);
     int directoryCap = stoi(string(args[3]));
     int pageCap = stoi(string(args[4]));
-    long insertions = 5e7;
-    long limit = 1e8 - insertions;
+    long insertions = 0;
+    long limit = 1e7 - insertions;
     /* string sign = "-I1e" + to_string(int(log10(insertions))) + "-" + to_string(directoryCap) +
        "-" + to_string(pageCap); */
-    string sign = "-1e8-" + to_string(directoryCap) + "-" + to_string(pageCap);
+    string sign = "-1e7-" + to_string(directoryCap);
+    sign += "-T" + to_string(int(100 * TOLERANCE));
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";

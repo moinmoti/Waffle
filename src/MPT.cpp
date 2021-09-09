@@ -65,6 +65,7 @@ void MPT::bulkload(string filename, long limit) {
 
     cout << "Initiate page fission" << endl;
     root->points = Points;
+    root->numPoints = root->points->size();
     root->contents = vector<Node *>();
     root->splits = vector<Split>();
     root->fission(root, pageCap);
@@ -83,8 +84,11 @@ void MPT::insertQuery(array<float, 2> p, map<string, double> &stats) {
     root->insertPt(p, pageCap, directoryCap);
     if (root->contents->size() > directoryCap) {
         vector<Node *> newNodes = root->splitDirectory(root);
-        for (auto node : newNodes)
+        for (auto node : newNodes) {
+            // if constexpr (TOLERANCE < 1)
+            node->numPoints = node->pointCount();
             root->contents->emplace_back(node);
+        }
         root->height++;
     }
 }
@@ -179,7 +183,7 @@ void MPT::kNNQuery(array<float, 2> p, map<string, double> &stats, int k) {
 int MPT::size(map<string, double> &stats) const {
     int totalSize = 2 * sizeof(int);
     int pageSize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *);
-    int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *);
+    int directorySize = 4 * sizeof(float) + 2 * sizeof(int) + sizeof(Node *);
     int splitSize = 2 * sizeof(float) + sizeof(bool);
     stack<Node *> toVisit({root});
     Node *directory;
