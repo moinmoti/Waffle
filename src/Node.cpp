@@ -120,8 +120,8 @@ void Node::fusion(Node *parent, int directoryCap) {
             directory->fusion(parent, directoryCap);
             delete directory;
         } else {
-            if constexpr (TOLERANCE < 1)
-                directory->numPoints = directory->pointCount();
+            // if constexpr (TOLERANCE < 1)
+            directory->numPoints = directory->pointCount();
             parent->contents->emplace_back(directory);
         }
     }
@@ -129,8 +129,8 @@ void Node::fusion(Node *parent, int directoryCap) {
 
 void Node::insertPt(array<float, 2> pt, int pageCap, int directoryCap) {
     auto getArea = [](array<float, 4> r) { return (r[3] - r[1]) * (r[2] - r[0]); };
-    if constexpr (TOLERANCE < 1)
-        numPoints = numPoints.value() + 1;
+    // if constexpr (TOLERANCE < 1)
+    numPoints = numPoints.value() + 1;
     int key = -1;
     double area, newArea, minDiff = numeric_limits<float>::max();
     array<float, 4> newRect, minRect;
@@ -143,6 +143,8 @@ void Node::insertPt(array<float, 2> pt, int pageCap, int directoryCap) {
             minDiff = diff;
             minRect = newRect;
             key = i;
+            if (diff == 0)
+                break;
         }
     }
     Node *cn = contents.value()[key];
@@ -152,30 +154,30 @@ void Node::insertPt(array<float, 2> pt, int pageCap, int directoryCap) {
     if (cn->points) {
         cn->points->emplace_back(pt);
         if (cn->points->size() > pageCap) {
-            if constexpr (TOLERANCE < 1)
-                P = contents->size() + 1;
-            else {
+            // if constexpr (TOLERANCE < 1)
+            P = contents->size() + 1;
+            /* else {
                 vector<Node *> newNodes;
                 newNodes = cn->splitPage(this, cn->points->size() / 2);
                 contents->erase(contents->begin() + key);
                 delete cn;
                 for (auto node : newNodes)
                     contents->emplace_back(node);
-            }
+            } */
         }
     } else {
         cn->insertPt(pt, pageCap, directoryCap);
         if (cn->contents->size() > directoryCap) {
-            if constexpr (TOLERANCE < 1)
-                P = pageCount();
-            else {
+            // if constexpr (TOLERANCE < 1)
+            P = pageCount();
+            /* else {
                 vector<Node *> newNodes;
                 newNodes = cn->splitDirectory(this);
                 contents->erase(contents->begin() + key);
                 delete cn;
                 for (auto node : newNodes)
                     contents->emplace_back(node);
-            }
+            } */
         }
     }
     if (P != 0) {

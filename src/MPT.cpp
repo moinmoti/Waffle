@@ -92,8 +92,8 @@ void MPT::insertQuery(array<float, 2> pt, map<string, double> &stats) {
     if (root->contents->size() > directoryCap) {
         vector<Node *> newNodes = root->splitDirectory(root);
         for (auto node : newNodes) {
-            if constexpr (TOLERANCE < 1)
-                node->numPoints = node->pointCount();
+            // if constexpr (TOLERANCE < 1)
+            node->numPoints = node->pointCount();
             root->contents->emplace_back(node);
         }
         root->height++;

@@ -38,7 +38,7 @@ void __f(const char *names, Arg1 &&arg1, Args &&... args) {
 #define all(c) c.begin(), c.end()
 #define remove(container, element) container.erase(find(all(container), element))
 constexpr uint D = 2;
-constexpr float TOLERANCE = 2;
+constexpr float TOLERANCE = 0.25;
 constexpr bool V = 0;
 constexpr bool H = 1;
 constexpr double dist(float x1, float y1, float x2, float y2) {
