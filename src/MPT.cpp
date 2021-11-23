@@ -198,11 +198,11 @@ int MPT::size(map<string, double> &stats) const {
         directory = toVisit.top();
         toVisit.pop();
         stats["directories"]++;
+        stats["splits"] += directory->splits->size();
         for (auto cn : directory->contents.value()) {
-            if (cn->contents) {
-                stats["splits"] += cn->splits->size();
+            if (cn->contents)
                 toVisit.push(cn);
-            } else
+            else
                 stats["pages"]++;
         }
     }
