@@ -42,7 +42,7 @@ void MPT::bulkload(string filename, long limit) {
     ifstream file(filename);
 
     int i = 0;
-    vector<array<float, 2>> Points;
+    vector<Record> Points;
     Points.reserve(limit);
     if (file.is_open()) {
         // getline(file, line);
@@ -51,16 +51,18 @@ void MPT::bulkload(string filename, long limit) {
             float lat, lon;
             istringstream buf(line);
             buf >> id >> lon >> lat;
-            array pt{lon, lat};
+            Record pt;
+            pt.id = id;
+            pt.data = {lon, lat};
             Points.emplace_back(pt);
-            if (root->rect[0] > pt[0])
-                root->rect[0] = pt[0];
-            if (root->rect[1] > pt[1])
-                root->rect[1] = pt[1];
-            if (root->rect[2] < pt[0])
-                root->rect[2] = pt[0];
-            if (root->rect[3] < pt[1])
-                root->rect[3] = pt[1];
+            if (root->rect[0] > pt.data[0])
+                root->rect[0] = pt.data[0];
+            if (root->rect[1] > pt.data[1])
+                root->rect[1] = pt.data[1];
+            if (root->rect[2] < pt.data[0])
+                root->rect[2] = pt.data[0];
+            if (root->rect[3] < pt.data[1])
+                root->rect[3] = pt.data[1];
             if (++i >= limit)
                 break;
         }
@@ -85,9 +87,9 @@ void MPT::bulkload(string filename, long limit) {
     }
 }
 
-void MPT::insertQuery(array<float, 2> pt, map<string, double> &stats) {
-    if (root->minSqrDist(pt) > 0)
-        root->rect = root->getRect(pt);
+void MPT::insertQuery(Record pt, map<string, double> &stats) {
+    if (root->minSqrDist(pt.data) > 0)
+        root->rect = root->getRect(pt.data);
     root->insertPt(pt, pageCap, directoryCap);
     if (root->contents->size() > directoryCap) {
         vector<Node *> newNodes = root->splitDirectory(root);
@@ -100,17 +102,17 @@ void MPT::insertQuery(array<float, 2> pt, map<string, double> &stats) {
     }
 }
 
-void MPT::deleteQuery(array<float, 2> p, map<string, double> &stats) {
+void MPT::deleteQuery(Record p, map<string, double> &stats) {
     Node *node = root;
     while (node->contents) {
         auto cn = node->contents->begin();
-        while (!(*cn)->containsPt(p))
+        while (!(*cn)->containsPt(p.data))
             cn++;
         node = *cn;
     }
-    auto pt = find(all(node->points.value()), p);
+    /* auto pt = find(all(node->points.value()), p);
     if (pt != node->points->end())
-        node->points->erase(pt);
+        node->points->erase(pt); */
 }
 
 void MPT::rangeQuery(array<float, 4> query, map<string, double> &stats) {
@@ -119,7 +121,7 @@ void MPT::rangeQuery(array<float, 4> query, map<string, double> &stats) {
 }
 
 typedef struct knnPoint {
-    array<float, 2> pt;
+    Record pt;
     double dist = numeric_limits<float>::max();
     bool operator<(const knnPoint &second) const { return dist < second.dist; }
 } knnPoint;
@@ -151,7 +153,7 @@ void MPT::kNNQuery(array<float, 2> queryPt, map<string, double> &stats, int k) {
             if (node->points) {
                 for (auto p : node->points.value()) {
                     minDist = knnPts.top().dist;
-                    dist = calcSqrDist(queryPt, p);
+                    dist = calcSqrDist(queryPt, p.data);
                     if (dist < minDist) {
                         knnPoint kPt;
                         kPt.pt = p;
@@ -183,7 +185,7 @@ void MPT::kNNQuery(array<float, 2> queryPt, map<string, double> &stats, int k) {
         p = knnPts.top().pt;
         sqrDist = knnPts.top().dist;
         knnPts.pop();
-        trace(p[0], p[1], sqrDist);
+        trace(p.id, sqrDist);
     } */
 }
 

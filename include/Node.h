@@ -20,7 +20,7 @@ public:
     optional<vector<Split>> splits;
 
     // Page specific members
-    optional<vector<array<float, 2>>> points;
+    optional<vector<Record>> points;
 
     // Rect methods
     bool containsPt(array<float, 2> p) const;
@@ -34,7 +34,7 @@ public:
     // Node methods
     void fission(Node *, int);
     void fusion(Node *, int);
-    void insertPt(array<float, 2> p, int, int);
+    void insertPt(Record p, int, int);
     long pageCount() const;
     long pointCount() const;
     int rangeSearch(array<float, 4>, map<string, double> &);

@@ -127,7 +127,7 @@ void Node::fusion(Node *parent, int directoryCap) {
     }
 }
 
-void Node::insertPt(array<float, 2> pt, int pageCap, int directoryCap) {
+void Node::insertPt(Record pt, int pageCap, int directoryCap) {
     auto getArea = [](array<float, 4> r) { return (r[3] - r[1]) * (r[2] - r[0]); };
     // if constexpr (TOLERANCE < 1)
     numPoints = numPoints.value() + 1;
@@ -136,7 +136,7 @@ void Node::insertPt(array<float, 2> pt, int pageCap, int directoryCap) {
     array<float, 4> newRect, minRect;
     for (uint i = 0; i < contents->size(); i++) {
         Node *cn = contents.value()[i];
-        newRect = cn->getRect(pt);
+        newRect = cn->getRect(pt.data);
         area = getArea(cn->rect);
         newArea = getArea(newRect);
         if (double diff = newArea - area; minDiff > diff) {
@@ -255,7 +255,7 @@ int Node::scan(array<float, 4> query) const {
     if (inside(query))
         return points->size();
     for (auto p : points.value())
-        if (overlaps(query, p))
+        if (overlaps(query, p.data))
             totalPoints++;
     return totalPoints;
 }
@@ -309,30 +309,30 @@ vector<Node *> Node::splitDirectory(Node *pn) {
 vector<Node *> Node::splitPage(Node *pn, long splitPos) {
     bool axis = (rect[2] - rect[0]) < (rect[3] - rect[1]);
     sort(all(points.value()),
-         [axis](const array<float, 2> &l, const array<float, 2> &r) { return l[axis] < r[axis]; });
+        [axis](const Record &l, const Record &r) { return l.data[axis] < r.data[axis]; });
     Split newSplit = Split();
     newSplit.axis = axis;
-    newSplit.pt[axis] = points.value()[splitPos][axis];
+    newSplit.pt[axis] = points.value()[splitPos].data[axis];
     newSplit.pt[!axis] = getCenter()[!axis];
 
     // cerr << "Create new pages" << endl;
     vector<Node *> pages = {new Node(), new Node()};
 
     // Splitting points
-    pages[0]->points = vector<array<float, 2>>(points->begin(), points->begin() + splitPos);
-    pages[1]->points = vector<array<float, 2>>(points->begin() + splitPos, points->end());
+    pages[0]->points = vector<Record>(points->begin(), points->begin() + splitPos);
+    pages[1]->points = vector<Record>(points->begin() + splitPos, points->end());
 
     // cerr << "Make bounding rectangles" << endl;
     for (auto page : pages) {
         for (auto p : page->points.value()) {
-            if (page->rect[0] > p[0])
-                page->rect[0] = p[0];
-            if (page->rect[1] > p[1])
-                page->rect[1] = p[1];
-            if (page->rect[2] < p[0])
-                page->rect[2] = p[0];
-            if (page->rect[3] < p[1])
-                page->rect[3] = p[1];
+            if (page->rect[0] > p.data[0])
+                page->rect[0] = p.data[0];
+            if (page->rect[1] > p.data[1])
+                page->rect[1] = p.data[1];
+            if (page->rect[2] < p.data[0])
+                page->rect[2] = p.data[0];
+            if (page->rect[3] < p.data[1])
+                page->rect[3] = p.data[1];
         }
     }
 
@@ -342,7 +342,7 @@ vector<Node *> Node::splitPage(Node *pn, long splitPos) {
 
 int Node::unbind() {
     int height = 1;
-    points = vector<array<float, 2>>();
+    points = vector<Record>();
     for (auto node : contents.value()) {
         if (node->contents)
             height = node->unbind() + 1;

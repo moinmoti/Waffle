@@ -48,3 +48,8 @@ constexpr double distManhattan(float x1, float y1, float x2, float y2) {
     return abs(x1 - x2) + abs(y1 - y2);
 }
 constexpr uint oppDir(uint d) {return (d + D) % (D * 2);};
+
+struct Record {
+    int id;
+    array<float, 2> data;
+};

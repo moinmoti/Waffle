@@ -68,10 +68,10 @@ void rangeQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, dou
 }
 
 void insertQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, double> &insertLog) {
-    array<float, 2> p;
-    for (uint i = 0; i < p.size(); i++)
-        p[i] = get<1>(q)[i];
-    int id = get<2>(q);
+    Record p;
+    for (uint i = 0; i < p.data.size(); i++)
+        p.data[i] = get<1>(q)[i];
+    p.id = get<2>(q);
 
     map<string, double> stats;
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
@@ -81,10 +81,10 @@ void insertQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, do
 }
 
 void deleteQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, double> &deleteLog) {
-    array<float, 2> p;
-    for (uint i = 0; i < p.size(); i++)
-        p[i] = get<1>(q)[i];
-    int id = get<2>(q);
+    Record p;
+    for (uint i = 0; i < p.data.size(); i++)
+        p.data[i] = get<1>(q)[i];
+    p.id = get<2>(q);
 
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
     map<string, double> stats;
