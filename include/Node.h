@@ -6,6 +6,9 @@
 class Node {
 
 public:
+    static int directoryCap;
+    static int pageCap;
+
     int height = 0;
     array<float, 4> rect = {
         numeric_limits<float>::max(),
@@ -15,7 +18,7 @@ public:
     };
 
     // Directory specific members
-    optional<int> numPoints;
+    optional<Info> ledger;
     optional<vector<Node*>> contents;
     optional<vector<Split>> splits;
 
@@ -32,17 +35,17 @@ public:
     array<float, 4> getRect(array<float, 2>);
 
     // Node methods
-    void fission(Node *, int);
-    void fusion(Node *, int);
-    void insertPt(Record p, int, int);
-    long pageCount() const;
-    long pointCount() const;
-    int rangeSearch(array<float, 4>, map<string, double> &);
+    void fission(Node *);
+    void fusion(Node *);
+    Info insertPt(Record p);
+    array<long, 2> getInfo() const;
+    Info rangeSearch(array<float, 4>);
+    Info refresh();
     int scan(array<float, 4>) const;
     int size() const;
     vector<Node*> splitDirectory(Node *);
     vector<Node*> splitPage(Node *, long);
-    int unbind();
+    void unbind();
 
     ~Node();
 };

@@ -9,6 +9,7 @@
 #include <limits>
 #include <math.h>
 #include <map>
+#include <unordered_map>
 #include <optional>
 #include <queue>
 #include <vector>
@@ -52,4 +53,18 @@ constexpr uint oppDir(uint d) {return (d + D) % (D * 2);};
 struct Record {
     int id;
     array<float, 2> data;
+};
+
+struct Info {
+    int pages = 0;
+    int points = 0;
+    int reads = 0;
+    int writes = 0;
+
+    Info operator+(Info i) {
+        return Info{pages+i.pages, points+i.points, reads+i.reads, writes+i.writes};
+    }
+    void operator+=(Info i) {
+        *this = *this + i;
+    }
 };

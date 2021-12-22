@@ -1,5 +1,9 @@
 #include "Node.h"
 
+// Definition of static variables.
+int Node::directoryCap;
+int Node::pageCap;
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // Rectangle Methods
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -101,37 +105,35 @@ array<float, 4> Node::getRect(array<float, 2> p) {
 // Node Methods
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void Node::fission(Node *parent, int pageCap) {
+void Node::fission(Node *parent) {
     long splitPos = pageCap * floor(ceil(points->size() / float(pageCap)) / 2);
     vector<Node *> pages = splitPage(parent, splitPos);
     for (auto page : pages) {
         if (page->points->size() > pageCap) {
-            page->fission(parent, pageCap);
+            page->fission(parent);
             delete page;
         } else
             parent->contents->emplace_back(page);
     }
 }
 
-void Node::fusion(Node *parent, int directoryCap) {
+void Node::fusion(Node *parent) {
     vector<Node *> directories = splitDirectory(parent);
     for (auto directory : directories) {
         if (directory->contents->size() > directoryCap) {
-            directory->fusion(parent, directoryCap);
+            directory->fusion(parent);
             delete directory;
-        } else {
-            // if constexpr (TOLERANCE < 1)
-            directory->numPoints = directory->pointCount();
+        } else
             parent->contents->emplace_back(directory);
-        }
     }
 }
 
-void Node::insertPt(Record pt, int pageCap, int directoryCap) {
+Info Node::insertPt(Record pt) {
     auto getArea = [](array<float, 4> r) { return (r[3] - r[1]) * (r[2] - r[0]); };
-    // if constexpr (TOLERANCE < 1)
-    numPoints = numPoints.value() + 1;
+    Info info;
     int key = -1;
+
+    // Update MBRs.
     double area, newArea, minDiff = numeric_limits<float>::max();
     array<float, 4> newRect, minRect;
     for (uint i = 0; i < contents->size(); i++) {
@@ -150,96 +152,87 @@ void Node::insertPt(Record pt, int pageCap, int directoryCap) {
     Node *cn = contents.value()[key];
     if (minDiff > 0)
         cn->rect = minRect;
-    long P = 0;
+
+    // Check for node type and proceed.
+    vector<Node *> newNodes;
     if (cn->points) {
         cn->points->emplace_back(pt);
+        info = Info{0, 1, 0, 1};
         if (cn->points->size() > pageCap) {
-            // if constexpr (TOLERANCE < 1)
-            P = contents->size() + 1;
-            /* else {
-                vector<Node *> newNodes;
-                newNodes = cn->splitPage(this, cn->points->size() / 2);
-                contents->erase(contents->begin() + key);
-                delete cn;
-                for (auto node : newNodes)
-                    contents->emplace_back(node);
-            } */
+            newNodes = cn->splitPage(this, cn->points->size() / 2);
+            info.writes = 2;
+            info.pages = 1;
         }
     } else {
-        cn->insertPt(pt, pageCap, directoryCap);
-        if (cn->contents->size() > directoryCap) {
-            // if constexpr (TOLERANCE < 1)
-            P = pageCount();
-            /* else {
-                vector<Node *> newNodes;
-                newNodes = cn->splitDirectory(this);
-                contents->erase(contents->begin() + key);
-                delete cn;
-                for (auto node : newNodes)
-                    contents->emplace_back(node);
-            } */
-        }
+        info = cn->insertPt(pt);
+        if (cn->contents->size() > directoryCap)
+            newNodes = cn->splitDirectory(this);
     }
-    if (P != 0) {
-        if (float fat = (P / ceil(numPoints.value() / float(pageCap))) - 1; fat > TOLERANCE) {
-            int targetHeight = unbind();
-            contents->clear();
-            splits->clear();
-            fission(this, pageCap);
-            height = 1;
-            numPoints = points->size();
-            points->clear();
-            points.reset();
-            while (height < targetHeight) {
-                fusion(this, directoryCap);
-                height++;
-            }
-        } else {
-            vector<Node *> newNodes;
-            if (cn->points)
-                newNodes = cn->splitPage(this, cn->points->size() / 2);
-            else {
-                newNodes = cn->splitDirectory(this);
-                for (auto dir : newNodes)
-                    dir->numPoints = dir->pointCount();
-            }
-            contents->erase(contents->begin() + key);
-            delete cn;
-            for (auto node : newNodes)
-                contents->emplace_back(node);
-        }
+
+    // Update the node contents if any new nodes (overflow)
+    if (!newNodes.empty()) {
+        contents->erase(contents->begin() + key);
+        delete cn;
+        for (auto node : newNodes)
+            contents->emplace_back(node);
     }
+    *ledger += info;
+    return info;
 }
 
-long Node::pageCount() const {
+array<long, 2> Node::getInfo() const {
     if (points)
-        return 1;
-    long totalPages = 0;
-    for (auto node : contents.value())
-        totalPages += node->pageCount();
-    return totalPages;
+        return {1, long(points->size())};
+    long numPages = 0;
+    long numPoints = 0;
+    for (auto node : contents.value()) {
+        array temp = node->getInfo();
+        numPages += temp[0];
+        numPoints += temp[1];
+    }
+    return {numPages, numPoints};
 }
 
-long Node::pointCount() const {
-    if (points)
-        return points->size();
-    long totalPoints = 0;
-    for (auto node : contents.value())
-        totalPoints += node->pointCount();
-    return totalPoints;
-}
-
-int Node::rangeSearch(array<float, 4> query, map<string, double> &stats) {
-    int totalPoints = 0;
+Info Node::rangeSearch(array<float, 4> query) {
+    Info info;
     if (points) {
-        stats["io"]++;
-        // totalPoints += scan(query);
+        info.reads = 1;
+        // info.points = scan(query);
     } else {
-        for (auto cn : contents.value())
+        for (auto cn : contents.value()) {
             if (cn->overlap(query))
-                totalPoints += cn->rangeSearch(query, stats);
+                info += cn->rangeSearch(query);
+        }
+        // Adding individually because points data has different context.
+        ledger->pages += info.pages;
+        ledger->reads += info.reads;
+        ledger->writes += info.writes;
+        info += refresh();
     }
-    return totalPoints;
+    return info;
+}
+
+Info Node::refresh() {
+    float fat = (ledger->pages / ceil(ledger->points / float(pageCap))) - 1;
+    float tolerance = ledger->writes / float(ledger->writes + ledger->reads);
+    trace(fat, tolerance);
+    if (fat > tolerance) {
+        int numPages = ledger->pages;
+        unbind();
+        contents->clear();
+        splits->clear();
+        fission(this);
+        points->clear();
+        points.reset();
+        while (contents->size() > directoryCap) {
+            fusion(this);
+            height++;
+        }
+        ledger->pages = getInfo()[0];
+        ledger->writes += numPages;
+        return Info{ledger->pages - numPages, 0, 0, numPages};
+    }
+    return Info();
 }
 
 inline bool overlaps(array<float, 4> r, array<float, 2> p) {
@@ -273,37 +266,47 @@ int Node::size() const {
 }
 
 vector<Node *> Node::splitDirectory(Node *pn) {
-    vector<Node *> nodes = {new Node(), new Node()};
+    vector<Node *> dirs = {new Node(), new Node()};
     Split bestSplit = splits.value()[0];
-    for (auto node : nodes) {
-        node->height = height;
-        node->contents = vector<Node *>();
-        node->splits = vector<Split>();
+    for (auto dir : dirs) {
+        dir->height = height;
+        dir->contents = vector<Node *>();
+        dir->splits = vector<Split>();
     }
 
     // cerr << "Make bounding rectangles" << endl;
     for (auto cn : contents.value()) {
         bool side = cn->getCenter()[bestSplit.axis] > bestSplit.pt[bestSplit.axis];
-        nodes[side]->contents->emplace_back(cn);
-        if (nodes[side]->rect[0] > cn->rect[0])
-            nodes[side]->rect[0] = cn->rect[0];
-        if (nodes[side]->rect[1] > cn->rect[1])
-            nodes[side]->rect[1] = cn->rect[1];
-        if (nodes[side]->rect[2] < cn->rect[2])
-            nodes[side]->rect[2] = cn->rect[2];
-        if (nodes[side]->rect[3] < cn->rect[3])
-            nodes[side]->rect[3] = cn->rect[3];
+        dirs[side]->contents->emplace_back(cn);
+        if (dirs[side]->rect[0] > cn->rect[0])
+            dirs[side]->rect[0] = cn->rect[0];
+        if (dirs[side]->rect[1] > cn->rect[1])
+            dirs[side]->rect[1] = cn->rect[1];
+        if (dirs[side]->rect[2] < cn->rect[2])
+            dirs[side]->rect[2] = cn->rect[2];
+        if (dirs[side]->rect[3] < cn->rect[3])
+            dirs[side]->rect[3] = cn->rect[3];
     }
 
     // cerr << "Distribute splits" << endl;
     for (auto isplit = next(splits->begin()); isplit != splits->end(); isplit++)
-        nodes[(*isplit).pt[bestSplit.axis] > bestSplit.pt[bestSplit.axis]]->splits->emplace_back(
+        dirs[(*isplit).pt[bestSplit.axis] > bestSplit.pt[bestSplit.axis]]->splits->emplace_back(
             *isplit);
+
+    for (auto dir : dirs) {
+        array temp = dir->getInfo();
+        dir->ledger = Info();
+        dir->ledger->pages = temp[0];
+        dir->ledger->points = temp[1];
+        // NOTE: Using simple heuristic for now. Refine it later.
+        dir->ledger->reads = (ledger->reads + 1) / 2; // Alternate to ceil
+        dir->ledger->writes = (ledger->writes + 1) / 2;
+    }
 
     contents->clear();
     splits->clear();
     pn->splits->emplace_back(bestSplit);
-    return nodes;
+    return dirs;
 }
 
 vector<Node *> Node::splitPage(Node *pn, long splitPos) {
@@ -340,16 +343,14 @@ vector<Node *> Node::splitPage(Node *pn, long splitPos) {
     return pages;
 }
 
-int Node::unbind() {
-    int height = 1;
+void Node::unbind() {
     points = vector<Record>();
     for (auto node : contents.value()) {
         if (node->contents)
-            height = node->unbind() + 1;
+            node->unbind();
         points->insert(points->end(), all(node->points.value()));
         delete node;
     }
-    return height;
 }
 
 Node::~Node() {
@@ -357,10 +358,10 @@ Node::~Node() {
         points->clear();
         points.reset();
     } else {
-        splits->clear();
-        splits.reset();
         contents->clear();
         contents.reset();
-        numPoints.reset();
+        ledger.reset();
+        splits->clear();
+        splits.reset();
     }
 }

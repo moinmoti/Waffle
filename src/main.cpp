@@ -38,13 +38,12 @@ void knnQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, doubl
 
     // cerr << "Points: " << p[0] << " | " << p[1] << endl;
 
-    map<string, double> stats;
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
-    index->kNNQuery(p, stats, k);
+    Info stats = index->kNNQuery(p, k);
     knnLog["knn_total " + to_string(k)] +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
     // knnLog["scan " + to_string(k)] += stats["scan"];
-    knnLog["io " + to_string(k)] += stats["io"];
+    knnLog["io " + to_string(k)] += stats.reads + stats.writes;
     /* knnLog["explore " + to_string(k)] += stats["explore"];
     knnLog["scanned " + to_string(k)] += stats["scanCount"];
     knnLog["heapAccess " + to_string(k)] += stats["heapAccess"]; */
@@ -57,13 +56,12 @@ void rangeQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, dou
         query[i] = get<1>(q)[i];
     float rs = get<2>(q);
 
-    map<string, double> stats;
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
-    index->rangeQuery(query, stats);
+    Info stats = index->rangeQuery(query);
     rangeLog["total " + to_string(rs)] +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
     // rangeLog["scan " + to_string(rs)] += stats["scanTime"];
-    rangeLog["io " + to_string(rs)] += stats["io"];
+    rangeLog["io " + to_string(rs)] += stats.reads + stats.writes;
     rangeLog["count " + to_string(rs)]++;
 }
 
@@ -73,9 +71,8 @@ void insertQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, do
         p.data[i] = get<1>(q)[i];
     p.id = get<2>(q);
 
-    map<string, double> stats;
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
-    index->insertQuery(p, stats);
+    Info stats = index->insertQuery(p);
     insertLog["total"] +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
 }
@@ -87,8 +84,7 @@ void deleteQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, do
     p.id = get<2>(q);
 
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
-    map<string, double> stats;
-    index->deleteQuery(p, stats);
+    Info stats = index->deleteQuery(p);
     deleteLog["total"] +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
 }
@@ -109,7 +105,7 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
         } else if (get<0>(q) == 'i') {
             insertQuery(q, index, insertLog);
             insertLog["count"]++;
-            if (long(insertLog["count"]) % long(1e7) == 0)
+            if (long(insertLog["count"]) % long(1e6) == 0)
                 trace(insertLog["count"]);
         } else if (get<0>(q) == 'd') {
             deleteQuery(q, index, deleteLog);
@@ -125,25 +121,25 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
 
             log << "------------------Range Queries-------------------" << endl;
             for (auto &l : rangeLog) {
-                log << l.first << ": " << l.second << endl;
+                log << l.first << ":\t" << l.second << endl;
                 l.second = 0;
             }
 
             log << "------------------KNN Queries-------------------" << endl;
             for (auto &l : knnLog) {
-                log << l.first << ": " << l.second << endl;
+                log << l.first << ":\t" << l.second << endl;
                 l.second = 0;
             }
 
             /* log << "------------------Delete Queries-------------------" << endl;
             for (auto &l : deleteLog) {
-                log << l.first << ": " << l.second << endl;
+                log << l.first << ":\t" << l.second << endl;
                 l.second = 0;
             } */
 
             log << "------------------Insert Queries-------------------" << endl;
             for (auto &l : insertLog) {
-                log << l.first << ": " << l.second << endl;
+                log << l.first << ":\t" << l.second << endl;
                 l.second = 0;
             }
 
@@ -163,7 +159,7 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
         // cerr << endl;
     }
     cout << "Finish Querying..." << endl;
-    // index->snapshot();
+    index->snapshot();
 }
 
 int main(int argCount, char **args) {
@@ -174,15 +170,17 @@ int main(int argCount, char **args) {
     int pageCap = stoi(string(args[4]));
     long insertions = 0;
     long limit = 1e7 - insertions;
-    string sign = "-1e8-" + to_string(directoryCap);
-    sign += "-T" + to_string(int(100 * TOLERANCE));
+    string sign = "-1e7-" + to_string(directoryCap);
+    // sign += "-T" + to_string(int(100 * TOLERANCE));
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";
-    string queryFile = projectPath + "/data/ships-dinos/Queries/" + queryType;
-    string dataFile = projectPath + "/data/ships-dinos/ships1e8.txt";
-    /* string queryFile = projectPath + "/data/OSM-USA/" + queryType;
-    string dataFile = projectPath + "/data/OSM-USA/osm-usa-10mil"; */
+    /* string queryFile = projectPath + "/data/ships-dinos/Queries/" + queryType;
+    string dataFile = projectPath + "/data/ships-dinos/ships1e8.txt"; */
+    string queryFile = projectPath + "/data/OSM-USA/" + queryType;
+    string dataFile = projectPath + "/data/OSM-USA/osm-usa-10mil";
+    /* string queryFile = projectPath + "/data/NewYorkTaxi/" + queryType;
+    string dataFile = projectPath + "/data/NewYorkTaxi/taxiNY"; */
     int offset = 0;
 
     cout << "---Generation--- " << endl;
@@ -193,7 +191,7 @@ int main(int argCount, char **args) {
         cout << "Unable to open log.txt";
     high_resolution_clock::time_point start = high_resolution_clock::now();
     cout << "Defining MPT..." << endl;
-    MPT index = MPT(pageCap, directoryCap);
+    MPT index = MPT(directoryCap, pageCap);
     cout << "Bulkloading MPT..." << endl;
     index.bulkload(dataFile, limit);
     double hTreeCreationTime =

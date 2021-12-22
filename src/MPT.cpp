@@ -4,9 +4,9 @@ void printRect(string Rect, array<float, 4> r) {
     cerr << Rect << ": " << r[0] << " | " << r[1] << " | " << r[2] << " | " << r[3] << endl;
 }
 
-MPT::MPT(int _pageCap, int _directoryCap) {
-    pageCap = _pageCap;
-    directoryCap = _directoryCap;
+MPT::MPT(int _directoryCap, int _pageCap) {
+    Node::directoryCap = _directoryCap;
+    Node::pageCap = _pageCap;
     root = new Node();
 }
 
@@ -74,35 +74,32 @@ void MPT::bulkload(string filename, long limit) {
     root->points = Points;
     root->contents = vector<Node *>();
     root->splits = vector<Split>();
-    root->fission(root, pageCap);
+    root->fission(root);
     root->height = 1;
-    root->numPoints = root->points->size();
     root->points->clear();
     root->points.reset();
 
     cout << "Initiate directory fission" << endl;
-    while (root->contents->size() > directoryCap) {
-        root->fusion(root, directoryCap);
+    while (root->contents->size() > root->directoryCap) {
+        root->fusion(root);
         root->height++;
     }
 }
 
-void MPT::insertQuery(Record pt, map<string, double> &stats) {
+Info MPT::insertQuery(Record pt) {
     if (root->minSqrDist(pt.data) > 0)
         root->rect = root->getRect(pt.data);
-    root->insertPt(pt, pageCap, directoryCap);
-    if (root->contents->size() > directoryCap) {
+    Info stats = root->insertPt(pt);
+    if (root->contents->size() > root->directoryCap) {
         vector<Node *> newNodes = root->splitDirectory(root);
-        for (auto node : newNodes) {
-            // if constexpr (TOLERANCE < 1)
-            node->numPoints = node->pointCount();
+        for (auto node : newNodes)
             root->contents->emplace_back(node);
-        }
         root->height++;
     }
+    return stats;
 }
 
-void MPT::deleteQuery(Record p, map<string, double> &stats) {
+Info MPT::deleteQuery(Record p) {
     Node *node = root;
     while (node->contents) {
         auto cn = node->contents->begin();
@@ -110,45 +107,65 @@ void MPT::deleteQuery(Record p, map<string, double> &stats) {
             cn++;
         node = *cn;
     }
-    /* auto pt = find(all(node->points.value()), p);
-    if (pt != node->points->end())
-        node->points->erase(pt); */
+    Info stats;
+    // Find the point using the id and delete it.
+    return stats;
 }
 
-void MPT::rangeQuery(array<float, 4> query, map<string, double> &stats) {
-    int pointCount = root->rangeSearch(query, stats);
+Info MPT::rangeQuery(array<float, 4> query) {
+    Info stats = root->rangeSearch(query);
+    int pointCount = stats.points;
+    return stats;
     // trace(pointCount);
 }
 
-typedef struct knnPoint {
+struct knnPoint {
     Record pt;
     double dist = numeric_limits<float>::max();
     bool operator<(const knnPoint &second) const { return dist < second.dist; }
-} knnPoint;
+};
 
-typedef struct knnNode {
+struct knnNode {
     Node *sn;
+    bool pageRead = false;
     double dist = numeric_limits<float>::max();
-    bool operator<(const knnNode &second) const { return dist > second.dist; }
-} knnNode;
+    vector<knnNode *> branch;
 
-void MPT::kNNQuery(array<float, 2> queryPt, map<string, double> &stats, int k) {
+    Info track() {
+        Info info;
+        if (sn->points) {
+            info.reads = pageRead;
+        } else {
+            for (auto kn : branch)
+                info += kn->track();
+            *(sn->ledger) += info;
+            info += sn->refresh();
+        }
+        return info;
+    }
+    // bool operator<(const knnNode &second) const { return dist > second.dist; }
+};
+
+Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
     auto calcSqrDist = [](array<float, 2> x, array<float, 2> y) {
         return pow((x[0] - y[0]), 2) + pow((x[1] - y[1]), 2);
     };
+    auto compare = [](knnNode *l, knnNode *r) { return l->dist > r->dist; };
 
     vector<knnPoint> tempPts(k);
     priority_queue<knnPoint, vector<knnPoint>> knnPts(all(tempPts));
-    priority_queue<knnNode, vector<knnNode>> unseenNodes;
-    unseenNodes.emplace(knnNode{root, root->minSqrDist(queryPt)});
-    double dist, minDist;
-    Node *node;
+    priority_queue<knnNode *, vector<knnNode *>, decltype(compare)> unseenNodes(compare);
+    knnNode *rootKNode = new knnNode();
+    rootKNode->sn = root;
+    rootKNode->dist = root->minSqrDist(queryPt);
+    unseenNodes.emplace(rootKNode);
 
     while (!unseenNodes.empty()) {
-        node = unseenNodes.top().sn;
-        dist = unseenNodes.top().dist;
+        knnNode *kNode = unseenNodes.top();
+        Node *node = kNode->sn;
+        double dist = kNode->dist;
         unseenNodes.pop();
-        minDist = knnPts.top().dist;
+        double minDist = knnPts.top().dist;
         if (dist < minDist) {
             if (node->points) {
                 for (auto p : node->points.value()) {
@@ -162,16 +179,17 @@ void MPT::kNNQuery(array<float, 2> queryPt, map<string, double> &stats, int k) {
                         knnPts.push(kPt);
                     }
                 }
-                stats["io"]++;
+                kNode->pageRead = true; // Only data nodes read should be tracked.
             } else {
                 minDist = knnPts.top().dist;
                 for (auto cn : node->contents.value()) {
                     dist = cn->minSqrDist(queryPt);
                     if (dist < minDist) {
-                        knnNode kn;
-                        kn.sn = cn;
-                        kn.dist = dist;
+                        knnNode *kn = new knnNode();
+                        kn->sn = cn;
+                        kn->dist = dist;
                         unseenNodes.push(kn);
+                        kNode->branch.emplace_back(kn);
                     }
                 }
             }
@@ -187,12 +205,15 @@ void MPT::kNNQuery(array<float, 2> queryPt, map<string, double> &stats, int k) {
         knnPts.pop();
         trace(p.id, sqrDist);
     } */
+
+    Info info = rootKNode->track();
+    return info;
 }
 
 int MPT::size(map<string, double> &stats) const {
     int totalSize = 2 * sizeof(int);
     int pageSize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *);
-    int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *);
+    int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *) + sizeof(Info);
     int splitSize = 2 * sizeof(float) + sizeof(bool);
     stack<Node *> toVisit({root});
     Node *directory;
