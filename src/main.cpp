@@ -100,8 +100,8 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
         } else if (get<0>(q) == 'i') {
             insertQuery(q, index, insertLog);
             insertLog["count"]++;
-            if (long(insertLog["count"]) % long(1e6) == 0)
-                trace(insertLog["count"]);
+            /* if (long(insertLog["count"]) % long(1e6) == 0)
+                trace(insertLog["count"]); */
         } else if (get<0>(q) == 'd') {
             deleteQuery(q, index, deleteLog);
             deleteLog["count"]++;
@@ -163,17 +163,16 @@ int main(int argCount, char **args) {
     string queryType = string(args[2]);
     int directoryCap = stoi(string(args[3]));
     int pageCap = stoi(string(args[4]));
-    long insertions = 0;
-    long limit = 1e7 - insertions;
+    long limit = 1e7;
     string sign = "-1e7-" + to_string(directoryCap);
     // sign += "-T" + to_string(int(100 * TOLERANCE));
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";
-    /* string queryFile = projectPath + "/data/ships-dinos/Queries/" + queryType;
-    string dataFile = projectPath + "/data/ships-dinos/ships1e8.txt"; */
-    string queryFile = projectPath + "/data/OSM-USA/" + queryType;
-    string dataFile = projectPath + "/data/OSM-USA/osm-usa-10mil";
+    string queryFile = projectPath + "/data/ships-dinos/Queries/" + queryType;
+    string dataFile = projectPath + "/data/ships-dinos/ships1e8.txt";
+    /* string queryFile = projectPath + "/data/OSM-USA/" + queryType;
+    string dataFile = projectPath + "/data/OSM-USA/osm-usa-10mil"; */
     /* string queryFile = projectPath + "/data/NewYorkTaxi/" + queryType;
     string dataFile = projectPath + "/data/NewYorkTaxi/taxiNY"; */
     int offset = 0;

@@ -197,7 +197,7 @@ Info Node::rangeSearch(array<float, 4> query) {
     Info info;
     if (points) {
         info.reads = 1;
-        // info.points = scan(query);
+        info.points = scan(query);
     } else {
         for (auto cn : contents.value()) {
             if (cn->overlap(query))
@@ -215,7 +215,7 @@ Info Node::rangeSearch(array<float, 4> query) {
 Info Node::refresh() {
     float fat = (ledger->pages / ceil(ledger->points / float(pageCap))) - 1;
     float tolerance = ledger->writes / float(ledger->writes + ledger->reads);
-    trace(fat, tolerance);
+    // trace(fat, tolerance);
     if (fat > tolerance) {
         int numPages = ledger->pages;
         unbind();
