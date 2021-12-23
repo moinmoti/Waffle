@@ -203,7 +203,7 @@ Info Node::rangeSearch(array<float, 4> query) {
             if (cn->overlap(query))
                 info += cn->rangeSearch(query);
         }
-        // Adding individually because points data has different context.
+        // Adding individually because points entry has different context.
         ledger->pages += info.pages;
         ledger->reads += info.reads;
         ledger->writes += info.writes;

@@ -42,11 +42,7 @@ void knnQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, doubl
     Info stats = index->kNNQuery(p, k);
     knnLog["knn_total " + to_string(k)] +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
-    // knnLog["scan " + to_string(k)] += stats["scan"];
-    knnLog["io " + to_string(k)] += stats.reads + stats.writes;
-    /* knnLog["explore " + to_string(k)] += stats["explore"];
-    knnLog["scanned " + to_string(k)] += stats["scanCount"];
-    knnLog["heapAccess " + to_string(k)] += stats["heapAccess"]; */
+    knnLog["io " + to_string(k)] += stats.reads;
     knnLog["count " + to_string(k)]++;
 }
 
@@ -60,8 +56,7 @@ void rangeQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, dou
     Info stats = index->rangeQuery(query);
     rangeLog["total " + to_string(rs)] +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
-    // rangeLog["scan " + to_string(rs)] += stats["scanTime"];
-    rangeLog["io " + to_string(rs)] += stats.reads + stats.writes;
+    rangeLog["io " + to_string(rs)] += stats.reads;
     rangeLog["count " + to_string(rs)]++;
 }
 
