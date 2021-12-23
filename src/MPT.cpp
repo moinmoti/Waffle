@@ -8,6 +8,8 @@ MPT::MPT(int _directoryCap, int _pageCap) {
     Node::directoryCap = _directoryCap;
     Node::pageCap = _pageCap;
     root = new Node();
+    root->ledger->reads = 0;
+    root->ledger->writes = 1;
 }
 
 MPT::~MPT() {}
@@ -75,6 +77,8 @@ void MPT::bulkload(string filename, long limit) {
     root->contents = vector<Node *>();
     root->splits = vector<Split>();
     root->fission(root);
+    root->ledger->pages = root->contents->size();
+    root->ledger->points = root->points->size();
     root->height = 1;
     root->points->clear();
     root->points.reset();
@@ -115,8 +119,8 @@ Info MPT::deleteQuery(Record p) {
 Info MPT::rangeQuery(array<float, 4> query) {
     Info stats = root->rangeSearch(query);
     int pointCount = stats.points;
+    trace(pointCount);
     return stats;
-    // trace(pointCount);
 }
 
 struct knnPoint {
@@ -197,14 +201,14 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
             break;
     }
 
-    /* double sqrDist;
-    array<float, 2> p;
+    double sqrDist;
+    Record p;
     while (!knnPts.empty()) {
         p = knnPts.top().pt;
         sqrDist = knnPts.top().dist;
         knnPts.pop();
         trace(p.id, sqrDist);
-    } */
+    }
 
     Info info = rootKNode->track();
     return info;
