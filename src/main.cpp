@@ -1,5 +1,18 @@
 #include "MPT.h"
 
+struct Stats {
+    struct StatType {
+        long count;
+        long io;
+        long time;
+    };
+
+    StatType del;
+    StatType insert;
+    map<int, StatType> knn;
+    map<float, StatType> range;
+};
+
 void createQuerySet(string fileName, vector<tuple<char, vector<float>, float>> &queryArray) {
     cout << "Begin query creation for MPT" << endl;
     string line;
@@ -30,7 +43,7 @@ void createQuerySet(string fileName, vector<tuple<char, vector<float>, float>> &
     cout << "Finish query creation for MPT" << endl;
 }
 
-void knnQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, double> &knnLog) {
+void knnQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
     array<float, 2> p;
     for (uint i = 0; i < p.size(); i++)
         p[i] = get<1>(q)[i];
@@ -39,91 +52,89 @@ void knnQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, doubl
     // cerr << "Points: " << p[0] << " | " << p[1] << endl;
 
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
-    Info stats = index->kNNQuery(p, k);
-    knnLog["knn_total " + to_string(k)] +=
+    Info info = index->kNNQuery(p, k);
+    stats.knn[k].time +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
-    knnLog["io " + to_string(k)] += stats.reads;
-    knnLog["count " + to_string(k)]++;
+    stats.knn[k].io += info.reads;
+    stats.insert.io += info.writes;
+    stats.knn[k].count++;
 }
 
-void rangeQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, double> &rangeLog) {
+void rangeQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
     array<float, 4> query;
     for (uint i = 0; i < query.size(); i++)
         query[i] = get<1>(q)[i];
     float rs = get<2>(q);
 
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
-    Info stats = index->rangeQuery(query);
-    rangeLog["total " + to_string(rs)] +=
+    Info info = index->rangeQuery(query);
+    stats.range[rs].time +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
-    rangeLog["io " + to_string(rs)] += stats.reads;
-    rangeLog["count " + to_string(rs)]++;
+    stats.range[rs].io += info.reads;
+    stats.insert.io += info.writes;
+    stats.range[rs].count++;
 }
 
-void insertQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, double> &insertLog) {
+void insertQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
     Record p;
     for (uint i = 0; i < p.data.size(); i++)
         p.data[i] = get<1>(q)[i];
     p.id = get<2>(q);
 
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
-    Info stats = index->insertQuery(p);
-    insertLog["total"] +=
+    Info info = index->insertQuery(p);
+    stats.insert.time +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
+    stats.insert.count++;
 }
 
-void deleteQuery(tuple<char, vector<float>, float> q, MPT *index, map<string, double> &deleteLog) {
+void deleteQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
     Record p;
     for (uint i = 0; i < p.data.size(); i++)
         p.data[i] = get<1>(q)[i];
     p.id = get<2>(q);
 
     high_resolution_clock::time_point startTime = high_resolution_clock::now();
-    Info stats = index->deleteQuery(p);
-    deleteLog["total"] +=
-        duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
+    Info info = index->deleteQuery(p);
+    stats.del.time += duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
+    stats.del.count++;
 }
 
 void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, string logFile) {
-    map<string, double> deleteLog, insertLog, rangeLog, knnLog;
+    Stats stats;
 
     cout << "Begin Querying..." << endl;
     for (auto q : queryArray) {
         if (get<0>(q) == 'k') {
-            knnQuery(q, index, knnLog);
-            knnLog["count"]++;
-            // trace(knnLog["count"]);
+            knnQuery(q, index, stats);
         } else if (get<0>(q) == 'r') {
-            rangeQuery(q, index, rangeLog);
-            rangeLog["count"]++;
-            // trace(rangeLog["count"]);
+            rangeQuery(q, index, stats);
         } else if (get<0>(q) == 'i') {
-            insertQuery(q, index, insertLog);
-            insertLog["count"]++;
-            /* if (long(insertLog["count"]) % long(1e6) == 0)
-                trace(insertLog["count"]); */
+            insertQuery(q, index, stats);
         } else if (get<0>(q) == 'd') {
-            deleteQuery(q, index, deleteLog);
-            deleteLog["count"]++;
-            // trace(deleteLog["count"]);
+            deleteQuery(q, index, stats);
         } else if (get<0>(q) == 'l') {
             ofstream log;
             log.open(logFile, ios_base::app);
             if (!log.is_open())
                 cerr << "Unable to open log.txt";
 
-            log << "------------------Results-------------------" << endl;
+            log << "------------------Results-------------------" << endl << endl;
 
             log << "------------------Range Queries-------------------" << endl;
-            for (auto &l : rangeLog) {
-                log << l.first << ":\t" << l.second / 750 << endl;
-                l.second = 0;
+            for (auto &l : stats.range) {
+                log << "Size:\t" << l.first << endl;
+                log << "Count:\t" << l.second.count << endl;
+                log << "I/O:\t" << l.second.io / double(l.second.count) << endl;
+                log << "Time: \t" << l.second.time / double(l.second.count) << endl << endl;
             }
 
             log << "------------------KNN Queries-------------------" << endl;
-            for (auto &l : knnLog) {
-                log << l.first << ":\t" << l.second / 750 << endl;
-                l.second = 0;
+            for (auto &l : stats.knn) {
+                log << "k:\t" << l.first << endl;
+                log << "Count:\t" << l.second.count << endl;
+                log << "I/O:\t" << l.second.io / double(l.second.count) << endl;
+                log << "Time: \t" << l.second.time / double(l.second.count) << endl << endl;
             }
 
             /* log << "------------------Delete Queries-------------------" << endl;
@@ -133,18 +144,16 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
             } */
 
             log << "------------------Insert Queries-------------------" << endl;
-            for (auto &l : insertLog) {
-                log << l.first << ":\t" << l.second / 2500 << endl;
-                l.second = 0;
-            }
+            log << "Count:\t" << stats.insert.count << endl;
+            log << "I/O:\t" << stats.insert.io / double(stats.insert.count) << endl;
+            log << "Time: \t" << stats.insert.time / double(stats.insert.count) << endl << endl;
 
-            map<string, double> stats;
-            float indexSize = index->size(stats);
+            map<string, double> info;
+            float indexSize = index->size(info);
             log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
             // index->snapshot();
-            log << "No. of pages: " << stats["pages"] << endl;
-            log << "No. of directories: " << stats["directories"] << endl;
-            log << "Tolerance: " << TOLERANCE << endl;
+            log << "No. of pages: " << info["pages"] << endl;
+            log << "No. of directories: " << info["directories"] << endl;
 
             log << endl << "************************************************" << endl;
 
