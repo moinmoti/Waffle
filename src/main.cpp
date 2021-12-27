@@ -116,37 +116,25 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
 
             log << "------------------Range Queries-------------------" << endl;
             for (auto &l : rangeLog) {
-                if (l.first == "count")
-                    log << l.first << ":\t" << l.second << endl;
-                else
-                    log << l.first << ":\t" << l.second / rangeLog["count"] << endl;
+                log << l.first << ":\t" << l.second / 750 << endl;
                 l.second = 0;
             }
 
             log << "------------------KNN Queries-------------------" << endl;
             for (auto &l : knnLog) {
-                if (l.first == "count")
-                    log << l.first << ":\t" << l.second << endl;
-                else
-                    log << l.first << ":\t" << l.second / knnLog["count"] << endl;
+                log << l.first << ":\t" << l.second / 750 << endl;
                 l.second = 0;
             }
 
             /* log << "------------------Delete Queries-------------------" << endl;
             for (auto &l : deleteLog) {
-                if (l.first == "count")
-                    log << l.first << ":\t" << l.second << endl;
-                else
-                    log << l.first << ":\t" << l.second / deleteLog["count"] << endl;
+                log << l.first << ":\t" << l.second / 750 << endl;
                 l.second = 0;
             } */
 
             log << "------------------Insert Queries-------------------" << endl;
             for (auto &l : insertLog) {
-                if (l.first == "count")
-                    log << l.first << ":\t" << l.second << endl;
-                else
-                    log << l.first << ":\t" << l.second / insertLog["count"] << endl;
+                log << l.first << ":\t" << l.second / 2500 << endl;
                 l.second = 0;
             }
 
