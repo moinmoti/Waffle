@@ -2,9 +2,9 @@
 
 struct Stats {
     struct StatType {
-        long count;
-        long io;
-        long time;
+        long count = 0;
+        long io = 0;
+        long time = 0;
     };
 
     StatType del;
@@ -85,7 +85,9 @@ void insertQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) 
     Info info = index->insertQuery(p);
     stats.insert.time +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
+    stats.insert.io += info.writes;
     stats.insert.count++;
+    // trace(stats.insert.count);
 }
 
 void deleteQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
@@ -202,12 +204,12 @@ int main(int argCount, char **args) {
     log << "MPT Creation Time: " << hTreeCreationTime << endl;
     log << "Directory Capacity: " << directoryCap << endl;
     log << "Page Capacity: " << pageCap << endl;
-    map<string, double> stats;
-    float indexSize = index.size(stats);
+    map<string, double> info;
+    float indexSize = index.size(info);
     log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
     // index.snapshot();
-    log << "No. of pages: " << stats["pages"] << endl;
-    log << "No. of directories: " << stats["directories"] << endl;
+    log << "No. of pages: " << info["pages"] << endl;
+    log << "No. of directories: " << info["directories"] << endl;
 
     cout << "---Creating query set---" << endl;
     vector<tuple<char, vector<float>, float>> queryArray;

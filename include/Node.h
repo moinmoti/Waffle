@@ -8,10 +8,10 @@ class Node {
 public:
     // Ledger is different from Info structure.
     struct Ledger {
-        int pages;
-        int points;
-        float reads;
-        float writes;
+        int pages = 0;
+        int points = 0;
+        int reads = 0;
+        int writes = 0;
     };
 
     static int directoryCap;
