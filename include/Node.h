@@ -6,6 +6,14 @@
 class Node {
 
 public:
+    // Ledger is different from Info structure.
+    struct Ledger {
+        int pages;
+        int points;
+        float reads;
+        float writes;
+    };
+
     static int directoryCap;
     static int pageCap;
 
@@ -18,7 +26,7 @@ public:
     };
 
     // Directory specific members
-    optional<Info> ledger;
+    optional<Ledger> ledger;
     optional<vector<Node*>> contents;
     optional<vector<Split>> splits;
 

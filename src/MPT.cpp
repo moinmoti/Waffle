@@ -130,24 +130,24 @@ struct knnPoint {
 };
 
 struct knnNode {
-    Node *sn;
-    bool pageRead = false;
+    Node *self;
+    knnNode *parent;
     double dist = numeric_limits<float>::max();
-    vector<knnNode *> branch;
+    unordered_set<knnNode *> branch;
 
     Info track() {
         Info info;
-        if (sn->points) {
-            info.reads = pageRead;
+        if (self->points) {
+            info.reads = 1;
         } else {
             for (auto kn : branch)
                 info += kn->track();
-            *(sn->ledger) += info;
-            info += sn->refresh();
+            self->ledger->pages += info.pages;
+            self->ledger->reads++;
+            info += self->refresh();
         }
         return info;
     }
-    // bool operator<(const knnNode &second) const { return dist > second.dist; }
 };
 
 Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
@@ -160,13 +160,14 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
     priority_queue<knnPoint, vector<knnPoint>> knnPts(all(tempPts));
     priority_queue<knnNode *, vector<knnNode *>, decltype(compare)> unseenNodes(compare);
     knnNode *rootKNode = new knnNode();
-    rootKNode->sn = root;
+    rootKNode->self = root;
+    rootKNode->parent = NULL;
     rootKNode->dist = root->minSqrDist(queryPt);
     unseenNodes.emplace(rootKNode);
 
     while (!unseenNodes.empty()) {
         knnNode *kNode = unseenNodes.top();
-        Node *node = kNode->sn;
+        Node *node = kNode->self;
         double dist = kNode->dist;
         unseenNodes.pop();
         double minDist = knnPts.top().dist;
@@ -183,17 +184,20 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
                         knnPts.push(kPt);
                     }
                 }
-                kNode->pageRead = true; // Only data nodes read should be tracked.
+                while (kNode->parent) {
+                    kNode->parent->branch.insert(kNode);
+                    kNode = kNode->parent;
+                }
             } else {
                 minDist = knnPts.top().dist;
                 for (auto cn : node->contents.value()) {
                     dist = cn->minSqrDist(queryPt);
                     if (dist < minDist) {
                         knnNode *kn = new knnNode();
-                        kn->sn = cn;
+                        kn->self = cn;
+                        kn->parent = kNode;
                         kn->dist = dist;
                         unseenNodes.push(kn);
-                        kNode->branch.emplace_back(kn);
                     }
                 }
             }

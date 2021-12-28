@@ -176,7 +176,9 @@ Info Node::insertPt(Record pt) {
         for (auto node : newNodes)
             contents->emplace_back(node);
     }
-    *ledger += info;
+    ledger->pages += info.pages;
+    ledger->points++;
+    ledger->writes++;
     return info;
 }
 
@@ -203,10 +205,8 @@ Info Node::rangeSearch(array<float, 4> query) {
             if (cn->overlap(query))
                 info += cn->rangeSearch(query);
         }
-        // Adding individually because points entry has different context.
         ledger->pages += info.pages;
-        ledger->reads += info.reads;
-        ledger->writes += info.writes;
+        ledger->reads++;
         info += refresh();
     }
     return info;
@@ -229,7 +229,6 @@ Info Node::refresh() {
             height++;
         }
         ledger->pages = getInfo()[0];
-        ledger->writes += numPages;
         return Info{ledger->pages - numPages, 0, 0, numPages};
     }
     return Info();
@@ -295,7 +294,7 @@ vector<Node *> Node::splitDirectory(Node *pn) {
 
     for (auto dir : dirs) {
         array temp = dir->getInfo();
-        dir->ledger = Info();
+        dir->ledger = Ledger();
         dir->ledger->pages = temp[0];
         dir->ledger->points = temp[1];
         // NOTE: Using simple heuristic for now. Refine it later.
