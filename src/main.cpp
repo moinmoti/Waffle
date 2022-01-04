@@ -2,15 +2,16 @@
 
 struct Stats {
     struct StatType {
-        long count;
-        long io;
-        long time;
+        long count = 0;
+        long io = 0;
+        long time = 0;
     };
 
     StatType del;
     StatType insert;
     map<int, StatType> knn;
     map<float, StatType> range;
+    StatType reload;
 };
 
 void createQuerySet(string fileName, vector<tuple<char, vector<float>, float>> &queryArray) {
@@ -56,7 +57,10 @@ void knnQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
     stats.knn[k].time +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
     stats.knn[k].io += info.reads;
-    stats.insert.io += info.writes;
+    if (info.writes > 0) {
+        stats.reload.count++;
+        stats.reload.io += info.writes;
+    }
     stats.knn[k].count++;
 }
 
@@ -71,7 +75,10 @@ void rangeQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
     stats.range[rs].time +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
     stats.range[rs].io += info.reads;
-    stats.insert.io += info.writes;
+    if (info.writes > 0) {
+        stats.reload.count++;
+        stats.reload.io += info.writes;
+    }
     stats.range[rs].count++;
 }
 
@@ -85,6 +92,7 @@ void insertQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) 
     Info info = index->insertQuery(p);
     stats.insert.time +=
         duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
+    stats.insert.io += info.writes;
     stats.insert.count++;
 }
 
@@ -101,6 +109,8 @@ void deleteQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) 
 }
 
 void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, string logFile) {
+    auto roundit = [](float val, int d = 2) { return round(val * pow(10, d)) / pow(10, d); };
+
     Stats stats;
 
     cout << "Begin Querying..." << endl;
@@ -122,31 +132,31 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
             log << "------------------Results-------------------" << endl << endl;
 
             log << "------------------Range Queries-------------------" << endl;
+            log << setw(8) << "Size" << setw(8) << "Count" << setw(8) << "I/O" << setw(8) << "Time"
+                << endl;
             for (auto &l : stats.range) {
-                log << "Size:\t" << l.first << endl;
-                log << "Count:\t" << l.second.count << endl;
-                log << "I/O:\t" << l.second.io / double(l.second.count) << endl;
-                log << "Time: \t" << l.second.time / double(l.second.count) << endl << endl;
+                log << setw(8) << l.first << setw(8) << l.second.count << setw(8)
+                    << roundit(l.second.io / double(l.second.count)) << setw(8)
+                    << roundit(l.second.time / double(l.second.count)) << endl;
             }
 
-            log << "------------------KNN Queries-------------------" << endl;
+            log << endl << "------------------KNN Queries-------------------" << endl;
+            log << setw(8) << "k" << setw(8) << "Count" << setw(8) << "I/O" << setw(8) << "Time"
+                << endl;
             for (auto &l : stats.knn) {
-                log << "k:\t" << l.first << endl;
-                log << "Count:\t" << l.second.count << endl;
-                log << "I/O:\t" << l.second.io / double(l.second.count) << endl;
-                log << "Time: \t" << l.second.time / double(l.second.count) << endl << endl;
+                log << setw(8) << l.first << setw(8) << l.second.count << setw(8)
+                    << roundit(l.second.io / double(l.second.count)) << setw(8)
+                    << roundit(l.second.time / double(l.second.count)) << endl;
             }
 
-            /* log << "------------------Delete Queries-------------------" << endl;
-            for (auto &l : deleteLog) {
-                log << l.first << ":\t" << l.second / 750 << endl;
-                l.second = 0;
-            } */
-
-            log << "------------------Insert Queries-------------------" << endl;
+            log << endl << "------------------Insert Queries-------------------" << endl;
             log << "Count:\t" << stats.insert.count << endl;
             log << "I/O:\t" << stats.insert.io / double(stats.insert.count) << endl;
             log << "Time: \t" << stats.insert.time / double(stats.insert.count) << endl << endl;
+
+            log << endl << "------------------ Reloading -------------------" << endl;
+            log << "Count:\t" << stats.reload.count << endl;
+            log << "I/O (overall):\t" << stats.reload.io << endl << endl;
 
             map<string, double> info;
             float indexSize = index->size(info);
@@ -202,6 +212,7 @@ int main(int argCount, char **args) {
     log << "MPT Creation Time: " << hTreeCreationTime << endl;
     log << "Directory Capacity: " << directoryCap << endl;
     log << "Page Capacity: " << pageCap << endl;
+    log << "Trend Coefficient: " << index.root->trendCoeff << endl;
     map<string, double> stats;
     float indexSize = index.size(stats);
     log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
