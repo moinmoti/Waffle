@@ -8,14 +8,19 @@ class Node {
 public:
     // Ledger is different from Info structure.
     struct Ledger {
-        int pages;
-        int points;
-        float reads;
-        float writes;
+        int gap = 0;
+        int pages = 0;
+        int points = 0;
+        float reads = 0;
+        float writes = 0;
+
+        void upRead();
+        void upWrite();
     };
 
     static int directoryCap;
     static int pageCap;
+    static int trendCoeff;
 
     int height = 0;
     array<float, 4> rect = {

@@ -3,6 +3,7 @@
 // Definition of static variables.
 int Node::directoryCap;
 int Node::pageCap;
+int Node::trendCoeff;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Rectangle Methods
@@ -101,6 +102,29 @@ array<float, 4> Node::getRect(array<float, 2> p) {
         r[3] = p[1];
     return r;
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Ledger Methods
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void Node::Ledger::upRead() {
+    double rg = (gap > 0) ? gap : 0;
+    reads = reads * (1 - rg / (rg + trendCoeff)) + 1;
+    if (gap < 0)
+        gap--;
+    else
+        gap = -1;
+}
+
+void Node::Ledger::upWrite() {
+    double wg = (gap < 0) ? -gap : 0;
+    writes = writes * (1 - (wg / (wg + trendCoeff))) + 1;
+    if (gap > 0)
+        gap++;
+    else
+        gap = 1;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // Node Methods
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -178,7 +202,7 @@ Info Node::insertPt(Record pt) {
     }
     ledger->pages += info.pages;
     ledger->points++;
-    ledger->writes++;
+    ledger->upWrite();
     return info;
 }
 
@@ -199,36 +223,38 @@ Info Node::rangeSearch(array<float, 4> query) {
     Info info;
     if (points) {
         info.reads = 1;
-        info.points = scan(query);
+        // info.points = scan(query);
     } else {
         for (auto cn : contents.value()) {
             if (cn->overlap(query))
                 info += cn->rangeSearch(query);
         }
         ledger->pages += info.pages;
-        ledger->reads++;
         info += refresh();
     }
     return info;
 }
 
 Info Node::refresh() {
+    ledger->upRead();
     float fat = (ledger->pages / ceil(ledger->points / float(pageCap))) - 1;
-    float tolerance = ledger->writes / float(ledger->writes + ledger->reads);
+    float writeTrend = 1 - abs(ledger->gap) / (abs(ledger->gap) + trendCoeff);
+    float tolerance = ledger->writes / (ledger->writes + ledger->reads / writeTrend);
     // trace(fat, tolerance);
-    if (fat > tolerance) {
+    if (fat > tolerance && height == 1) {
         int numPages = ledger->pages;
         unbind();
         contents->clear();
         splits->clear();
         fission(this);
+        height = 1;
+        ledger->pages = contents->size();
         points->clear();
         points.reset();
         while (contents->size() > directoryCap) {
             fusion(this);
             height++;
         }
-        ledger->pages = getInfo()[0];
         return Info{ledger->pages - numPages, 0, 0, numPages};
     }
     return Info();
@@ -298,8 +324,8 @@ vector<Node *> Node::splitDirectory(Node *pn) {
         dir->ledger->pages = temp[0];
         dir->ledger->points = temp[1];
         // NOTE: Using simple heuristic for now. Refine it later.
-        dir->ledger->reads = (ledger->reads + 1) / 2; // Alternate to ceil
-        dir->ledger->writes = (ledger->writes + 1) / 2;
+        dir->ledger->reads = ledger->reads / 2;
+        dir->ledger->writes = ledger->writes / 2;
     }
 
     contents->clear();

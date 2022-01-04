@@ -7,6 +7,7 @@ void printRect(string Rect, array<float, 4> r) {
 MPT::MPT(int _directoryCap, int _pageCap) {
     Node::directoryCap = _directoryCap;
     Node::pageCap = _pageCap;
+    Node::trendCoeff = 100;
     root = new Node();
     root->ledger->reads = 0;
     root->ledger->writes = 1;
@@ -119,7 +120,7 @@ Info MPT::deleteQuery(Record p) {
 Info MPT::rangeQuery(array<float, 4> query) {
     Info stats = root->rangeSearch(query);
     int pointCount = stats.points;
-    trace(pointCount);
+    // trace(pointCount);
     return stats;
 }
 
@@ -143,7 +144,6 @@ struct knnNode {
             for (auto kn : branch)
                 info += kn->track();
             self->ledger->pages += info.pages;
-            self->ledger->reads++;
             info += self->refresh();
         }
         return info;
@@ -205,14 +205,14 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
             break;
     }
 
-    double sqrDist;
+    /* double sqrDist;
     Record p;
     while (!knnPts.empty()) {
         p = knnPts.top().pt;
         sqrDist = knnPts.top().dist;
         knnPts.pop();
         trace(p.id, sqrDist);
-    }
+    } */
 
     Info info = rootKNode->track();
     return info;
@@ -221,7 +221,7 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
 int MPT::size(map<string, double> &stats) const {
     int totalSize = 2 * sizeof(int);
     int pageSize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *);
-    int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *) + sizeof(Info);
+    int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *) + sizeof(Node::Ledger);
     int splitSize = 2 * sizeof(float) + sizeof(bool);
     stack<Node *> toVisit({root});
     Node *directory;
