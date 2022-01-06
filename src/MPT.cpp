@@ -221,7 +221,7 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
 int MPT::size(map<string, double> &stats) const {
     int totalSize = 2 * sizeof(int);
     int pageSize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *);
-    int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *) + sizeof(Info);
+    int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *) + sizeof(Node::Ledger);
     int splitSize = 2 * sizeof(float) + sizeof(bool);
     stack<Node *> toVisit({root});
     Node *directory;
