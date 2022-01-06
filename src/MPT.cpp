@@ -122,7 +122,7 @@ Info MPT::deleteQuery(Record p) {
 Info MPT::rangeQuery(array<float, 4> query) {
     Info stats = root->rangeSearch(query);
     int pointCount = stats.points;
-    trace(pointCount);
+    // trace(pointCount);
     return stats;
 }
 
@@ -208,14 +208,14 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
             break;
     }
 
-    double sqrDist;
+    /* double sqrDist;
     Record p;
     while (!knnPts.empty()) {
         p = knnPts.top().pt;
         sqrDist = knnPts.top().dist;
         knnPts.pop();
         trace(p.id, sqrDist);
-    }
+    } */
 
     Info info = rootKNode->track();
     return info;
