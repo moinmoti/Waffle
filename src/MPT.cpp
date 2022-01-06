@@ -17,20 +17,23 @@ MPT::~MPT() {}
 void MPT::snapshot() const {
     ofstream log("MPT.csv");
     stack<Node *> toVisit({root});
-    Node *directory;
+    Node *dir;
     while (!toVisit.empty()) {
-        directory = toVisit.top();
+        dir = toVisit.top();
         toVisit.pop();
-        log << directory->height << "," << directory->contents->size();
-        for (auto p : directory->rect)
+        log << dir->height << "," << dir->contents->size();
+        for (auto p : dir->rect)
             log << "," << p;
+        float tolerance = dir->ledger->writes / float(dir->ledger->writes + dir->ledger->reads);
+        trace(dir->ledger->reads, dir->ledger->writes, tolerance);
+        log << "," << tolerance;
         log << endl;
-        for (auto cn : directory->contents.value()) {
+        for (auto cn : dir->contents.value()) {
             if (cn->points) {
-                log << cn->height << "," << cn->points->size();
+                /* log << cn->height << "," << cn->points->size();
                 for (auto p : cn->rect)
                     log << "," << p;
-                log << endl;
+                log << endl; */
             } else {
                 toVisit.push(cn);
             }
