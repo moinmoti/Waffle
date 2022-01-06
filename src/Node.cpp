@@ -216,7 +216,7 @@ Info Node::refresh() {
     float fat = (ledger->pages / ceil(ledger->points / float(pageCap))) - 1;
     float tolerance = ledger->writes / float(ledger->writes + ledger->reads);
     // trace(fat, tolerance);
-    if (fat > tolerance) {
+    if (fat > tolerance && height == 1) {
         int numPages = ledger->pages;
         unbind();
         contents->clear();
