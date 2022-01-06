@@ -1,7 +1,7 @@
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 
-height = 0
+height = 1
 nodes = []
 with open("MPT.csv") as f:
     for i, line in enumerate(f):
@@ -12,6 +12,7 @@ with open("MPT.csv") as f:
                     float(line.split(",")[3]),
                     float(line.split(",")[4]),
                     float(line.split(",")[5]),
+                    float(line.split(",")[6]),
                 )
             )
         # if i == 10000: break
@@ -34,7 +35,7 @@ for l in nodes:
         l[3] - l[1],
         linewidth=1,
         edgecolor="black",
-        facecolor="none",
+        facecolor=(1,0,0,l[4]),
     )
     ax.add_patch(rect)
 
