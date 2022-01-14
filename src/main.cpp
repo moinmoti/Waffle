@@ -160,7 +160,6 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
             map<string, double> info;
             float indexSize = index->size(info);
             log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
-            // index->snapshot();
             log << "No. of pages: " << info["pages"] << endl;
             log << "No. of directories: " << info["directories"] << endl;
 
@@ -172,7 +171,6 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
         // cerr << endl;
     }
     cout << "Finish Querying..." << endl;
-    index->snapshot();
 }
 
 int main(int argCount, char **args) {
@@ -187,7 +185,7 @@ int main(int argCount, char **args) {
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";
-    string queryFile = projectPath + "/data/ships-dinos/Queries/" + queryType;
+    string queryFile = projectPath + "/data/ships-dinos/Queries/Distorted/" + queryType;
     string dataFile = projectPath + "/data/ships-dinos/ships1e8.txt";
     /* string queryFile = projectPath + "/data/OSM-USA/" + queryType;
     string dataFile = projectPath + "/data/OSM-USA/osm-usa-10mil"; */
@@ -214,7 +212,6 @@ int main(int argCount, char **args) {
     map<string, double> info;
     float indexSize = index.size(info);
     log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
-    // index.snapshot();
     log << "No. of pages: " << info["pages"] << endl;
     log << "No. of directories: " << info["directories"] << endl;
 
@@ -224,5 +221,6 @@ int main(int argCount, char **args) {
 
     cout << "---Evaluation--- " << endl;
     evaluate(&index, queryArray, logFile);
+    index.snapshot(prefix);
     return 0;
 }

@@ -14,34 +14,6 @@ MPT::MPT(int _directoryCap, int _pageCap) {
 
 MPT::~MPT() {}
 
-void MPT::snapshot() const {
-    ofstream log("MPT.csv");
-    stack<Node *> toVisit({root});
-    Node *dir;
-    while (!toVisit.empty()) {
-        dir = toVisit.top();
-        toVisit.pop();
-        log << dir->height << "," << dir->contents->size();
-        for (auto p : dir->rect)
-            log << "," << p;
-        float tolerance = dir->ledger->writes / float(dir->ledger->writes + dir->ledger->reads);
-        trace(dir->ledger->reads, dir->ledger->writes, tolerance);
-        log << "," << tolerance;
-        log << endl;
-        for (auto cn : dir->contents.value()) {
-            if (cn->points) {
-                /* log << cn->height << "," << cn->points->size();
-                for (auto p : cn->rect)
-                    log << "," << p;
-                log << endl; */
-            } else {
-                toVisit.push(cn);
-            }
-        }
-    }
-    log.close();
-}
-
 void MPT::bulkload(string filename, long limit) {
     string line;
     ifstream file(filename);
@@ -93,19 +65,6 @@ void MPT::bulkload(string filename, long limit) {
     }
 }
 
-Info MPT::insertQuery(Record pt) {
-    if (root->minSqrDist(pt.data) > 0)
-        root->rect = root->getRect(pt.data);
-    Info stats = root->insertPt(pt);
-    if (root->contents->size() > root->directoryCap) {
-        vector<Node *> newNodes = root->splitDirectory(root);
-        for (auto node : newNodes)
-            root->contents->emplace_back(node);
-        root->height++;
-    }
-    return stats;
-}
-
 Info MPT::deleteQuery(Record p) {
     Node *node = root;
     while (node->contents) {
@@ -119,10 +78,16 @@ Info MPT::deleteQuery(Record p) {
     return stats;
 }
 
-Info MPT::rangeQuery(array<float, 4> query) {
-    Info stats = root->rangeSearch(query);
-    int pointCount = stats.points;
-    // trace(pointCount);
+Info MPT::insertQuery(Record pt) {
+    if (root->minSqrDist(pt.data) > 0)
+        root->rect = root->getRect(pt.data);
+    Info stats = root->insertPt(pt);
+    if (root->contents->size() > root->directoryCap) {
+        vector<Node *> newNodes = root->splitDirectory(root);
+        for (auto node : newNodes)
+            root->contents->emplace_back(node);
+        root->height++;
+    }
     return stats;
 }
 
@@ -219,6 +184,41 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
 
     Info info = rootKNode->track();
     return info;
+}
+
+Info MPT::rangeQuery(array<float, 4> query) {
+    Info stats = root->rangeSearch(query);
+    int pointCount = stats.points;
+    // trace(pointCount);
+    return stats;
+}
+
+void MPT::snapshot(string prefix) const {
+    ofstream log(prefix + "MPT.csv");
+    stack<Node *> toVisit({root});
+    Node *dir;
+    while (!toVisit.empty()) {
+        dir = toVisit.top();
+        toVisit.pop();
+        log << dir->height << "," << dir->contents->size();
+        for (auto p : dir->rect)
+            log << "," << p;
+        float tolerance = dir->ledger->writes / float(dir->ledger->writes + dir->ledger->reads);
+        log << "," << tolerance;
+        log << endl;
+        for (auto cn : dir->contents.value()) {
+            if (cn->points) {
+                log << cn->height << "," << cn->points->size();
+                for (auto p : cn->rect)
+                    log << "," << p;
+                log << "," << tolerance;
+                log << endl;
+            } else {
+                toVisit.push(cn);
+            }
+        }
+    }
+    log.close();
 }
 
 int MPT::size(map<string, double> &stats) const {
