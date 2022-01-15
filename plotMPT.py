@@ -31,8 +31,7 @@ fig.update_yaxes(range=[-100, 100], showgrid=False, zeroline=False, mirror=True,
 
 # Add shapes
 for n in nodes:
-    a = n[4]
-    alpha = (a - minTol) / (maxTol - minTol)
+    alpha = (n[4] - minTol) / (maxTol - minTol)
     fig.add_trace(
         go.Scatter(
             mode="lines",
