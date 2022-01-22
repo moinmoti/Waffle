@@ -185,8 +185,8 @@ int main(int argCount, char **args) {
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";
-    string queryFile = projectPath + "/data/ships-dinos/Queries/Distorted/" + queryType;
-    string dataFile = projectPath + "/data/ships-dinos/ships1e8.txt";
+    string queryFile = projectPath + "/Data/ships/Distorted/" + queryType;
+    string dataFile = projectPath + "/Data/ships/ships1e8.txt";
     /* string queryFile = projectPath + "/data/OSM-USA/" + queryType;
     string dataFile = projectPath + "/data/OSM-USA/osm-usa-10mil"; */
     /* string queryFile = projectPath + "/data/NewYorkTaxi/" + queryType;

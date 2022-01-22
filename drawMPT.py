@@ -1,7 +1,7 @@
 import plotly.graph_objects as go
 from statistics import mean
 
-height = 0
+height = 1
 nodes = []
 tolerance = []
 with open("MPT.csv") as f:
@@ -26,8 +26,24 @@ meanTol = round(mean(tolerance), 2)
 fig = go.Figure()
 
 # Set axes properties
-fig.update_xaxes(range=[-200, 200], showgrid=False, zeroline=False, mirror=True, ticks="outside", showline=True, linecolor="black")
-fig.update_yaxes(range=[-100, 100], showgrid=False, zeroline=False, mirror=True, ticks="outside", showline=True, linecolor="black")
+fig.update_xaxes(
+    range=[-200, 200],
+    showgrid=False,
+    zeroline=False,
+    mirror=True,
+    ticks="outside",
+    showline=True,
+    linecolor="black",
+)
+fig.update_yaxes(
+    range=[-100, 100],
+    showgrid=False,
+    zeroline=False,
+    mirror=True,
+    ticks="outside",
+    showline=True,
+    linecolor="black",
+)
 
 # Add shapes
 for n in nodes:
@@ -35,14 +51,13 @@ for n in nodes:
     fig.add_trace(
         go.Scatter(
             mode="lines",
-            x=[n[0],n[0],n[2],n[2],n[0]],
-            y=[n[1],n[3],n[3],n[1],n[1]],
+            x=[n[0], n[0], n[2], n[2], n[0]],
+            y=[n[1], n[3], n[3], n[1], n[1]],
             fill="toself",
             name="",
             text=str(n[4]),
-            fillcolor='rgba(255,143,0,'+str(alpha)+')',
-            line=dict(
-                color="black", width=0.25),
+            fillcolor="rgba(255,143,0," + str(alpha) + ")",
+            line=dict(color="black", width=0.25),
         )
     )
 
@@ -50,19 +65,23 @@ fig.add_trace(
     go.Scatter(
         x=[None],
         y=[None],
-        mode='markers',
+        mode="markers",
         marker=dict(
             cmin=0,
             cmax=1,
-            colorscale=[[0,'rgba(255,143,0,0)'],[1, 'rgba(255,143,0,1)']],
+            colorscale=[[0, "rgba(255,143,0,0)"], [1, "rgba(255,143,0,1)"]],
             showscale=True,
             colorbar=dict(
                 title="Node tolerance",
                 tickvals=[0, meanTol, 1],
-                ticktext=[str(minTol) + " (Min)", str(meanTol) + " (Mean)", str(maxTol) + " (Max)"],
+                ticktext=[
+                    str(minTol) + " (Min)",
+                    str(meanTol) + " (Mean)",
+                    str(maxTol) + " (Max)",
+                ],
                 ticks="outside",
-            )
-        )
+            ),
+        ),
     )
 )
 
@@ -73,6 +92,6 @@ fig.update_layout(
     xaxis_title="Longitude",
     yaxis_title="Latitude",
     font_size=6,
-    plot_bgcolor="white"
+    plot_bgcolor="white",
 )
-fig.write_image(file="tMap-ST-W10-H0.pdf")
+fig.write_image(file="MPT.pdf")
