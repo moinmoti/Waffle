@@ -7,7 +7,7 @@ void printRect(string Rect, array<float, 4> r) {
 MPT::MPT(int _directoryCap, int _pageCap) {
     Node::directoryCap = _directoryCap;
     Node::pageCap = _pageCap;
-    Node::trendCoeff = 100;
+    Node::trendCoeff = 1000;
     root = new Node();
     root->ledger->reads = 0;
     root->ledger->writes = 1;
@@ -18,20 +18,23 @@ MPT::~MPT() {}
 void MPT::snapshot() const {
     ofstream log("MPT.csv");
     stack<Node *> toVisit({root});
-    Node *directory;
+    Node *dir;
     while (!toVisit.empty()) {
-        directory = toVisit.top();
+        dir = toVisit.top();
         toVisit.pop();
-        log << directory->height << "," << directory->contents->size();
-        for (auto p : directory->rect)
+        log << dir->height << "," << dir->contents->size();
+        for (auto p : dir->rect)
             log << "," << p;
+        float wTrend = 1 - abs(dir->ledger->gap) / (abs(dir->ledger->gap) + dir->trendCoeff);
+        float tolerance = dir->ledger->writes / (dir->ledger->writes + dir->ledger->reads / wTrend);
+        log << "," << tolerance;
         log << endl;
-        for (auto cn : directory->contents.value()) {
+        for (auto cn : dir->contents.value()) {
             if (cn->points) {
-                log << cn->height << "," << cn->points->size();
+                /* log << cn->height << "," << cn->points->size();
                 for (auto p : cn->rect)
                     log << "," << p;
-                log << endl;
+                log << endl; */
             } else {
                 toVisit.push(cn);
             }
