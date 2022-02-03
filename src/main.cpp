@@ -52,10 +52,10 @@ void knnQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
 
     // cerr << "Points: " << p[0] << " | " << p[1] << endl;
 
-    high_resolution_clock::time_point startTime = high_resolution_clock::now();
+    // high_resolution_clock::time_point startTime = high_resolution_clock::now();
     Info info = index->kNNQuery(p, k);
-    stats.knn[k].time +=
-        duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
+    /* stats.knn[k].time +=
+        duration_cast<microseconds>(high_resolution_clock::now() - startTime).count(); */
     stats.knn[k].io += info.reads;
     if (info.writes > 0) {
         stats.reload.count++;
@@ -70,10 +70,10 @@ void rangeQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
         query[i] = get<1>(q)[i];
     float rs = get<2>(q);
 
-    high_resolution_clock::time_point startTime = high_resolution_clock::now();
+    // high_resolution_clock::time_point startTime = high_resolution_clock::now();
     Info info = index->rangeQuery(query);
-    stats.range[rs].time +=
-        duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
+    /* stats.range[rs].time +=
+        duration_cast<microseconds>(high_resolution_clock::now() - startTime).count(); */
     stats.range[rs].io += info.reads;
     if (info.writes > 0) {
         stats.reload.count++;
@@ -88,10 +88,10 @@ void insertQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) 
         p.data[i] = get<1>(q)[i];
     p.id = get<2>(q);
 
-    high_resolution_clock::time_point startTime = high_resolution_clock::now();
+    // high_resolution_clock::time_point startTime = high_resolution_clock::now();
     Info info = index->insertQuery(p);
-    stats.insert.time +=
-        duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
+    /* stats.insert.time +=
+        duration_cast<microseconds>(high_resolution_clock::now() - startTime).count(); */
     stats.insert.io += info.writes;
     stats.insert.count++;
 }
@@ -102,9 +102,10 @@ void deleteQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) 
         p.data[i] = get<1>(q)[i];
     p.id = get<2>(q);
 
-    high_resolution_clock::time_point startTime = high_resolution_clock::now();
+    // high_resolution_clock::time_point startTime = high_resolution_clock::now();
     Info info = index->deleteQuery(p);
-    stats.del.time += duration_cast<microseconds>(high_resolution_clock::now() - startTime).count();
+    // stats.del.time += duration_cast<microseconds>(high_resolution_clock::now() -
+    // startTime).count();
     stats.del.count++;
 }
 
@@ -123,6 +124,8 @@ void evaluate(MPT *index, vector<tuple<char, vector<float>, float>> queryArray, 
             insertQuery(q, index, stats);
         } else if (get<0>(q) == 'd') {
             deleteQuery(q, index, stats);
+        } else if (get<0>(q) == 'z') {
+            stats = Stats();
         } else if (get<0>(q) == 'l') {
             ofstream log;
             log.open(logFile, ios_base::app);
