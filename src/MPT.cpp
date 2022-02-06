@@ -8,8 +8,16 @@ MPT::MPT(int _directoryCap, int _pageCap) {
     Node::directoryCap = _directoryCap;
     Node::pageCap = _pageCap;
     root = new Node();
-    root->ledger->reads = 0;
-    root->ledger->writes = 1;
+    root->contents = vector<Node *>();
+    root->splits = vector<Split>();
+    root->ledger->pages = 1;
+    root->height = 1;
+    root->rect = {-180, -90, 180, 90};
+
+    Node *firstPage = new Node();
+    firstPage->points = vector<Record>();
+    firstPage->rect = root->rect;
+    root->contents->emplace_back(firstPage);
 }
 
 MPT::~MPT() {}
