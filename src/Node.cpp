@@ -133,7 +133,7 @@ Info Node::insertPt(Record pt) {
     Info info;
     int key = -1;
 
-    // Update MBRs.
+    // Find nearest child node and update it's MBR.
     double area, newArea, minDiff = numeric_limits<float>::max();
     array<float, 4> newRect, minRect;
     for (uint i = 0; i < contents->size(); i++) {
@@ -224,10 +224,11 @@ Info Node::refresh() {
         fission(this);
         points->clear();
         points.reset();
-        while (contents->size() > directoryCap) {
+        // NOTE: Only insertPt() handles all directory overflows.
+        /* while (contents->size() > directoryCap) {
             fusion(this);
             height++;
-        }
+        } */
         ledger->pages = getInfo()[0];
         return Info{ledger->pages - numPages, 0, 0, numPages};
     }

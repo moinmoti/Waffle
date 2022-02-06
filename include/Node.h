@@ -11,7 +11,7 @@ public:
         int pages = 0;
         int points = 0;
         int reads = 0;
-        int writes = 0;
+        int writes = 1;
     };
 
     static int directoryCap;
