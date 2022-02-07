@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Split.h"
 #include "common.h"
 
 class Node {
@@ -12,6 +11,11 @@ public:
         int points = 0;
         int reads = 0;
         int writes = 1;
+    };
+
+    struct Split {
+        std::array<float, 2> pt;
+        bool axis;
     };
 
     static int directoryCap;
@@ -55,5 +59,6 @@ public:
     vector<Node*> splitPage(Node *, long);
     void unbind();
 
+    Node(int = 0);
     ~Node();
 };

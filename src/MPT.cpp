@@ -7,11 +7,8 @@ void printRect(string Rect, array<float, 4> r) {
 MPT::MPT(int _directoryCap, int _pageCap) {
     Node::directoryCap = _directoryCap;
     Node::pageCap = _pageCap;
-    root = new Node();
-    root->contents = vector<Node *>();
-    root->splits = vector<Split>();
+    root = new Node(1);
     root->ledger->pages = 1;
-    root->height = 1;
     root->rect = {-180, -90, 180, 90};
 
     Node *firstPage = new Node();
@@ -56,9 +53,9 @@ void MPT::bulkload(string filename, long limit) {
         cerr << "Data file " << filename << " not found!";
 
     cout << "Initiate page fission" << endl;
+    // Clear root of any existing contents.
+    root->unbind();
     root->points = Points;
-    root->contents = vector<Node *>();
-    root->splits = vector<Split>();
     root->fission(root);
     root->ledger->pages = root->contents->size();
     root->ledger->points = root->points->size();

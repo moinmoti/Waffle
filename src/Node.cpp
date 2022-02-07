@@ -105,6 +105,15 @@ array<float, 4> Node::getRect(array<float, 2> p) {
 // Node Methods
 /////////////////////////////////////////////////////////////////////////////////////////
 
+Node::Node(int ht) {
+    if (ht > 0) {
+        height = ht;
+        contents = vector<Node *>();
+        ledger = Ledger();
+        splits = vector<Split>();
+    }
+}
+
 void Node::fission(Node *parent) {
     long splitPos = pageCap * floor(ceil(points->size() / float(pageCap)) / 2);
     vector<Node *> pages = splitPage(parent, splitPos);
@@ -266,13 +275,8 @@ int Node::size() const {
 }
 
 vector<Node *> Node::splitDirectory(Node *pn) {
-    vector<Node *> dirs = {new Node(), new Node()};
+    vector<Node *> dirs = {new Node(height), new Node(height)};
     Split bestSplit = splits.value()[0];
-    for (auto dir : dirs) {
-        dir->height = height;
-        dir->contents = vector<Node *>();
-        dir->splits = vector<Split>();
-    }
 
     // cerr << "Make bounding rectangles" << endl;
     for (auto cn : contents.value()) {
