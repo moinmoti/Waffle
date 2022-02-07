@@ -144,25 +144,38 @@ Info Node::insertPt(Record pt) {
     Info info;
     int key = -1;
 
-    // Find nearest child node and update it's MBR.
-    double area, newArea, minDiff = numeric_limits<float>::max();
-    array<float, 4> newRect, minRect;
     for (uint i = 0; i < contents->size(); i++) {
-        Node *cn = contents.value()[i];
-        newRect = cn->getRect(pt.data);
-        area = getArea(cn->rect);
-        newArea = getArea(newRect);
-        if (double diff = newArea - area; minDiff > diff) {
-            minDiff = diff;
-            minRect = newRect;
+        if (contents.value()[i]->containsPt(pt.data)) {
             key = i;
-            if (diff == 0)
+            break;
+        }
+    }
+    // If no child node contains the pt, find one to expand
+    array<float, 4> container = rect;
+    if (key < 0) {
+        for (auto s : splits.value()) {
+            bool lCheck = container[0] < s.pt[0];
+            bool rCheck = container[2] > s.pt[0];
+            bool dCheck = container[1] < s.pt[1];
+            bool uCheck = container[3] > s.pt[1];
+            if (lCheck && rCheck && dCheck && uCheck) {
+                if (pt.data[s.axis] > s.pt[s.axis]) {
+                    container[s.axis] = max(container[s.axis], s.pt[s.axis]);
+                } else {
+                    container[s.axis + D] = min(container[s.axis + D], s.pt[s.axis]);
+                }
+            }
+        }
+        for (uint i = 0; i < contents->size(); i++) {
+            Node *cn = contents.value()[i];
+            if (cn->inside(container)) {
+                key = i;
+                cn->rect = cn->getRect(pt.data);
                 break;
+            }
         }
     }
     Node *cn = contents.value()[key];
-    if (minDiff > 0)
-        cn->rect = minRect;
 
     // Check for node type and proceed.
     vector<Node *> newNodes;
