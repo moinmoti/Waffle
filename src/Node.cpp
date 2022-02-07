@@ -115,7 +115,9 @@ Node::Node(int ht) {
 }
 
 void Node::fission(Node *parent) {
-    long splitPos = pageCap * floor(ceil(points->size() / float(pageCap)) / 2);
+    long splitPos = points->size() / 2;
+    if (splitPos > pageCap)
+        splitPos = pageCap * floor(ceil(points->size() / float(pageCap)) / 2);
     vector<Node *> pages = splitPage(parent, splitPos);
     for (auto page : pages) {
         if (page->points->size() > pageCap) {
