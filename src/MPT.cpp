@@ -7,7 +7,6 @@ void printRect(string Rect, array<float, 4> r) {
 MPT::MPT(int _directoryCap, int _pageCap) {
     Node::directoryCap = _directoryCap;
     Node::pageCap = _pageCap;
-    Node::trendCoeff = 1000;
     root = new Node(1);
     root->ledger->pages = 1;
     root->ledger->points = 1;
@@ -212,7 +211,9 @@ void MPT::snapshot() const {
         log << dir->height << "," << dir->contents->size();
         for (auto p : dir->rect)
             log << "," << p;
-        float wTrend = 1 - abs(dir->ledger->gap) / (abs(dir->ledger->gap) + dir->trendCoeff);
+        float wTrend = 1;
+        if constexpr (TC > 0)
+            wTrend = 1 - abs(dir->ledger->gap) / (abs(dir->ledger->gap) + TC);
         float tolerance = dir->ledger->writes / (dir->ledger->writes + dir->ledger->reads / wTrend);
         log << "," << tolerance;
         log << endl;
@@ -234,6 +235,8 @@ int MPT::size(map<string, double> &stats) const {
     int totalSize = 2 * sizeof(int);
     int pageSize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *);
     int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *) + sizeof(Node::Ledger);
+    if constexpr (TC < 0)
+        directorySize -= sizeof(int); // Cumulative trend needs no gap.
     int splitSize = 2 * sizeof(float) + sizeof(bool);
     stack<Node *> toVisit({root});
     Node *directory;

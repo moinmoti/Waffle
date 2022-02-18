@@ -24,7 +24,6 @@ public:
 
     static int directoryCap;
     static int pageCap;
-    static int trendCoeff;
 
     int height = 0;
     array<float, 4> rect = {
