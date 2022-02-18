@@ -131,11 +131,13 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
     vector<knnPoint> tempPts(k);
     priority_queue<knnPoint, vector<knnPoint>> knnPts(all(tempPts));
     priority_queue<knnNode *, vector<knnNode *>, decltype(compare)> unseenNodes(compare);
+    vector<knnNode *> pool;
     knnNode *rootKNode = new knnNode();
     rootKNode->self = root;
     rootKNode->parent = NULL;
     rootKNode->dist = root->minSqrDist(queryPt);
     unseenNodes.emplace(rootKNode);
+    pool.emplace_back(rootKNode);
 
     while (!unseenNodes.empty()) {
         knnNode *kNode = unseenNodes.top();
@@ -169,7 +171,8 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
                         kn->self = cn;
                         kn->parent = kNode;
                         kn->dist = dist;
-                        unseenNodes.push(kn);
+                        unseenNodes.emplace(kn);
+                        pool.emplace_back(kn);
                     }
                 }
             }
@@ -187,6 +190,8 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
     } */
 
     Info info = rootKNode->track();
+    for (auto kn : pool)
+        delete kn;
     return info;
 }
 
