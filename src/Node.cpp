@@ -129,6 +129,15 @@ void Node::Ledger::upWrite() {
 // Node Methods
 /////////////////////////////////////////////////////////////////////////////////////////
 
+Node::Node(int ht) {
+    if (ht > 0) {
+        height = ht;
+        contents = vector<Node *>();
+        ledger = Ledger();
+        splits = vector<Split>();
+    }
+}
+
 void Node::fission(Node *parent) {
     long splitPos = pageCap * floor(ceil(points->size() / float(pageCap)) / 2);
     vector<Node *> pages = splitPage(parent, splitPos);
@@ -255,6 +264,7 @@ Info Node::refresh() {
             fusion(this);
             height++;
         }
+        } */
         return Info{ledger->pages - numPages, 0, 0, numPages};
     }
     return Info();
@@ -291,13 +301,8 @@ int Node::size() const {
 }
 
 vector<Node *> Node::splitDirectory(Node *pn) {
-    vector<Node *> dirs = {new Node(), new Node()};
+    vector<Node *> dirs = {new Node(height), new Node(height)};
     Split bestSplit = splits.value()[0];
-    for (auto dir : dirs) {
-        dir->height = height;
-        dir->contents = vector<Node *>();
-        dir->splits = vector<Split>();
-    }
 
     // cerr << "Make bounding rectangles" << endl;
     for (auto cn : contents.value()) {
@@ -324,8 +329,8 @@ vector<Node *> Node::splitDirectory(Node *pn) {
         dir->ledger->pages = temp[0];
         dir->ledger->points = temp[1];
         // NOTE: Using simple heuristic for now. Refine it later.
-        dir->ledger->reads = ledger->reads / 2;
-        dir->ledger->writes = ledger->writes / 2;
+        dir->ledger->reads = (ledger->reads + 1) / 2; // Alternate to ceil
+        dir->ledger->writes = (ledger->writes + 1) / 2;
     }
 
     contents->clear();
