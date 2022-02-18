@@ -204,10 +204,10 @@ Info Node::insertPt(Record pt) {
     vector<Node *> newNodes;
     if (cn->points) {
         cn->points->emplace_back(pt);
-        info = Info{0, 1, 0, 1};
+        info = Info{0, 1, 0, 2};
         if (cn->points->size() > pageCap) {
             newNodes = cn->splitPage(this, cn->points->size() / 2);
-            info.writes = 2;
+            info.writes = 3;
             info.pages = 1;
         }
     } else {
@@ -281,12 +281,7 @@ Info Node::refresh() {
         ledger->pages = contents->size();
         points->clear();
         points.reset();
-        // NOTE: Only insertPt() handles all directory overflows.
-        /* while (contents->size() > directoryCap) {
-            fusion(this);
-            height++;
-        } */
-        return Info{ledger->pages - numPages, 0, 0, numPages};
+        return Info{ledger->pages - numPages, 0, 0, numPages + ledger->pages};
     }
     return Info();
 }
