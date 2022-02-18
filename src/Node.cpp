@@ -258,14 +258,13 @@ Info Node::refresh() {
         contents->clear();
         splits->clear();
         fission(this);
-        height = 1;
         ledger->pages = contents->size();
         points->clear();
         points.reset();
-        while (contents->size() > directoryCap) {
+        // NOTE: Only insertPt() handles all directory overflows.
+        /* while (contents->size() > directoryCap) {
             fusion(this);
             height++;
-        }
         } */
         return Info{ledger->pages - numPages, 0, 0, numPages};
     }
