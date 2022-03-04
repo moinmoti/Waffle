@@ -159,13 +159,13 @@ int main(int argCount, char **args) {
     string queryType = string(args[2]);
     int directoryCap = stoi(string(args[3]));
     int pageCap = stoi(string(args[4]));
-    long limit = 1e7;
-    string sign = "-1e7-" + to_string(directoryCap);
+    // long limit = 1e7;
+    string sign = "-" + to_string(directoryCap);
     // sign += "-T" + to_string(int(100 * TOLERANCE));
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";
-    string queryFile = projectPath + "/Data/ships/Distorted/" + queryType;
+    string queryFile = projectPath + "/Data/ships/Queries/" + queryType + ".txt";
     string dataFile = projectPath + "/Data/ships/ships1e8.txt";
     /* string queryFile = projectPath + "/data/OSM-USA/" + queryType;
     string dataFile = projectPath + "/data/OSM-USA/osm-usa-10mil"; */
@@ -179,28 +179,24 @@ int main(int argCount, char **args) {
     ofstream log(logFile);
     if (!log.is_open())
         cout << "Unable to open log.txt";
-    high_resolution_clock::time_point start = high_resolution_clock::now();
+    // high_resolution_clock::time_point start = high_resolution_clock::now();
     cout << "Defining MPT..." << endl;
     MPT index = MPT(directoryCap, pageCap);
-    cout << "Bulkloading MPT..." << endl;
+    /* cout << "Bulkloading MPT..." << endl;
     index.bulkload(dataFile, limit);
     double hTreeCreationTime =
         duration_cast<microseconds>(high_resolution_clock::now() - start).count();
-    log << "MPT Creation Time: " << hTreeCreationTime << endl;
+    log << "MPT Creation Time: " << hTreeCreationTime << endl; */
     log << "Directory Capacity: " << directoryCap << endl;
     log << "Page Capacity: " << pageCap << endl;
-    log << "Trend Coefficient: " << index.root->trendCoeff << endl;
-    map<string, double> stats;
+    log << "Trend Coefficient: " << TC << endl;
+    /* map<string, double> stats;
     float indexSize = index.size(stats);
     log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
     log << "No. of pages: " << stats["pages"] << endl;
-    log << "No. of directories: " << stats["directories"] << endl;
-
-    cout << "---Creating query set---" << endl;
-    vector<tuple<char, vector<float>, float>> queryArray;
-    createQuerySet(queryFile, queryArray);
+    log << "No. of directories: " << stats["directories"] << endl; */
 
     cout << "---Evaluation--- " << endl;
-    evaluate(&index, queryArray, logFile);
+    evaluate(&index, queryFile, logFile);
     return 0;
 }

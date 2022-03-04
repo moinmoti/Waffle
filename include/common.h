@@ -40,7 +40,7 @@ void __f(const char *names, Arg1 &&arg1, Args &&... args) {
 
 #define all(c) c.begin(), c.end()
 #define remove(container, element) container.erase(find(all(container), element))
-constexpr int TC = -1; // Trend Coefficient: Negative value represents infinity, cumulative trend.
+constexpr int TC = 1000; // Trend Coefficient: Negative value represents infinity, cumulative trend.
 constexpr uint D = 2;
 constexpr bool V = 0;
 constexpr bool H = 1;

@@ -180,12 +180,14 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
     }
 
     /* double sqrDist;
-    Record p;
-    while (!knnPts.empty()) {
-        p = knnPts.top().pt;
-        sqrDist = knnPts.top().dist;
-        knnPts.pop();
-        trace(p.id, sqrDist);
+    Record pt;
+    if (k == 32) {
+        while (!knnPts.empty()) {
+            pt = knnPts.top().pt;
+            sqrDist = knnPts.top().dist;
+            knnPts.pop();
+            trace(pt.id);
+        }
     } */
 
     Info info = rootKNode->track();
