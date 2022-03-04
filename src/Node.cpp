@@ -103,28 +103,6 @@ array<float, 4> Node::getRect(array<float, 2> p) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// Ledger Methods
-/////////////////////////////////////////////////////////////////////////////////////////
-
-void Node::Ledger::upRead() {
-    double rg = (gap > 0) ? gap : 0;
-    reads = reads * (1 - rg / (rg + TC)) + 1;
-    if (gap < 0)
-        gap--;
-    else
-        gap = -1;
-}
-
-void Node::Ledger::upWrite() {
-    double wg = (gap < 0) ? -gap : 0;
-    writes = writes * (1 - (wg / (wg + TC))) + 1;
-    if (gap > 0)
-        gap++;
-    else
-        gap = 1;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
 // Node Methods
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -225,10 +203,7 @@ Info Node::insertPt(Record pt) {
     }
     ledger->pages += info.pages;
     ledger->points++;
-    if constexpr (TC > 0)
-        ledger->upWrite();
-    else
-        ledger->writes++;
+    ledger->writes++;
     return info;
 }
 
@@ -262,15 +237,9 @@ Info Node::rangeSearch(array<float, 4> query) {
 }
 
 Info Node::refresh() {
-    float writeTrend = 1;
-    if constexpr (TC > 0) {
-        ledger->upRead();
-        writeTrend = 1 - abs(ledger->gap) / (abs(ledger->gap) + TC);
-    } else {
-        ledger->reads++;
-    }
+    ledger->reads++;
     float fat = (ledger->pages / ceil(ledger->points / float(pageCap))) - 1;
-    float tolerance = ledger->writes / (ledger->writes + ledger->reads / writeTrend);
+    float tolerance = ledger->writes / (ledger->writes + ledger->reads);
     // trace(fat, tolerance);
     if (fat > tolerance && height == 1) {
         int numPages = ledger->pages;

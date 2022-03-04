@@ -7,14 +7,10 @@ class Node {
 public:
     // Ledger is different from Info structure.
     struct Ledger {
-        int gap = 0;
         int pages = 0;
         int points = 0;
         float reads = 0;
         float writes = 1;
-
-        void upRead();
-        void upWrite();
     };
 
     struct Split {

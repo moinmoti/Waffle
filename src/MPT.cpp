@@ -213,10 +213,7 @@ void MPT::snapshot() const {
         log << dir->height << "," << dir->contents->size();
         for (auto p : dir->rect)
             log << "," << p;
-        float wTrend = 1;
-        if constexpr (TC > 0)
-            wTrend = 1 - abs(dir->ledger->gap) / (abs(dir->ledger->gap) + TC);
-        float tolerance = dir->ledger->writes / (dir->ledger->writes + dir->ledger->reads / wTrend);
+        float tolerance = dir->ledger->writes / (dir->ledger->writes + dir->ledger->reads);
         log << "," << tolerance;
         log << endl;
         for (auto cn : dir->contents.value()) {
@@ -237,8 +234,6 @@ int MPT::size(map<string, double> &stats) const {
     int totalSize = 2 * sizeof(int);
     int pageSize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *);
     int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *) + sizeof(Node::Ledger);
-    if constexpr (TC < 0)
-        directorySize -= sizeof(int); // Cumulative trend needs no gap.
     int splitSize = 2 * sizeof(float) + sizeof(bool);
     stack<Node *> toVisit({root});
     Node *directory;

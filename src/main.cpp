@@ -161,7 +161,6 @@ int main(int argCount, char **args) {
     int pageCap = stoi(string(args[4]));
     // long limit = 1e7;
     string sign = "-" + to_string(directoryCap);
-    // sign += "-T" + to_string(int(100 * TOLERANCE));
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";
@@ -189,7 +188,6 @@ int main(int argCount, char **args) {
     log << "MPT Creation Time: " << hTreeCreationTime << endl; */
     log << "Directory Capacity: " << directoryCap << endl;
     log << "Page Capacity: " << pageCap << endl;
-    log << "Trend Coefficient: " << TC << endl;
     /* map<string, double> stats;
     float indexSize = index.size(stats);
     log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
