@@ -199,7 +199,7 @@ Info Waffle::kNNQuery(array<float, 2> queryPt, int k) {
 
 Info Waffle::rangeQuery(array<float, 4> query) {
     Info stats = root->rangeSearch(query);
-    int pointCount = stats.points;
+    // int pointCount = stats.points;
     // trace(pointCount);
     return stats;
 }
