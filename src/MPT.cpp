@@ -54,6 +54,7 @@ void MPT::bulkload(string filename, long limit) {
     cout << "Initiate page fission" << endl;
     // Clear root of any existing contents.
     root->unbind();
+    root->contents->clear();
     root->points = Points;
     root->fission(root);
     root->ledger->pages = root->contents->size();

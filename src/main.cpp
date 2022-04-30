@@ -159,17 +159,15 @@ int main(int argCount, char **args) {
     string queryType = string(args[2]);
     int directoryCap = stoi(string(args[3]));
     int pageCap = stoi(string(args[4]));
-    // long limit = 1e7;
+    long limit = 1e8;
     string sign = "-" + to_string(directoryCap);
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";
-    string queryFile = projectPath + "/Data/ships/Queries/" + queryType + ".txt";
-    string dataFile = projectPath + "/Data/ships/ships1e8.txt";
-    /* string queryFile = projectPath + "/data/OSM-USA/" + queryType;
-    string dataFile = projectPath + "/data/OSM-USA/osm-usa-10mil"; */
-    /* string queryFile = projectPath + "/data/NewYorkTaxi/" + queryType;
-    string dataFile = projectPath + "/data/NewYorkTaxi/taxiNY"; */
+    string queryFile = projectPath + "/Data/AIS/Queries/" + queryType + ".txt";
+    string dataFile = projectPath + "/Data/AIS/ships1e8.txt";
+    // string queryFile = projectPath + "/Data/OSM/Queries/" + queryType + ".txt";
+    // string dataFile = projectPath + "/Data/OSM/data-7e7.txt";
     int offset = 0;
 
     cout << "---Generation--- " << endl;
@@ -181,11 +179,11 @@ int main(int argCount, char **args) {
     // high_resolution_clock::time_point start = high_resolution_clock::now();
     cout << "Defining MPT..." << endl;
     MPT index = MPT(directoryCap, pageCap);
-    /* cout << "Bulkloading MPT..." << endl;
+    cout << "Bulkloading MPT..." << endl;
     index.bulkload(dataFile, limit);
-    double hTreeCreationTime =
-        duration_cast<microseconds>(high_resolution_clock::now() - start).count();
-    log << "MPT Creation Time: " << hTreeCreationTime << endl; */
+    /* double hTreeCreationTime =
+        duration_cast<microseconds>(high_resolution_clock::now() - start).count(); */
+    // log << "MPT Creation Time: " << hTreeCreationTime << endl;
     log << "Directory Capacity: " << directoryCap << endl;
     log << "Page Capacity: " << pageCap << endl;
     /* map<string, double> stats;
