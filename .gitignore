@@ -1,7 +1,6 @@
-# CMake Entries
+# Compiler Specific
 build
 compile_commands.json
-KDBTree
 
 # Other
 Experiments

@@ -2,9 +2,8 @@
 
 #include "common.h"
 
-class Node {
+struct Node {
 
-public:
     // Ledger is different from Info structure.
     struct Ledger {
         int pages = 0;

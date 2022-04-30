@@ -1,4 +1,4 @@
-#include "MPT.h"
+#include "Waffle.h"
 
 struct Stats {
     struct StatType {
@@ -14,7 +14,7 @@ struct Stats {
     StatType reload;
 };
 
-void knnQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
+void knnQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats) {
     array<float, 2> p;
     for (uint i = 0; i < p.size(); i++)
         p[i] = get<1>(q)[i];
@@ -28,7 +28,7 @@ void knnQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
     stats.knn[k].count++;
 }
 
-void rangeQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
+void rangeQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats) {
     array<float, 4> query;
     for (uint i = 0; i < query.size(); i++)
         query[i] = get<1>(q)[i];
@@ -43,7 +43,7 @@ void rangeQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
     stats.range[rs].count++;
 }
 
-void insertQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
+void insertQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats) {
     Record p;
     for (uint i = 0; i < p.data.size(); i++)
         p.data[i] = get<1>(q)[i];
@@ -53,7 +53,7 @@ void insertQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) 
     stats.insert.count++;
 }
 
-void deleteQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) {
+void deleteQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats) {
     Record p;
     for (uint i = 0; i < p.data.size(); i++)
         p.data[i] = get<1>(q)[i];
@@ -62,7 +62,7 @@ void deleteQuery(tuple<char, vector<float>, float> q, MPT *index, Stats &stats) 
     stats.del.count++;
 }
 
-void evaluate(MPT *index, string queryFile, string logFile) {
+void evaluate(Waffle *index, string queryFile, string logFile) {
     Stats stats;
     auto roundit = [](float val, int d = 2) { return round(val * pow(10, d)) / pow(10, d); };
 
@@ -137,7 +137,7 @@ void evaluate(MPT *index, string queryFile, string logFile) {
 
                 map<string, double> info;
                 float indexSize = index->size(info);
-                log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
+                log << "Waffle size in MB: " << float(indexSize / 1e6) << endl;
                 log << "No. of pages: " << info["pages"] << endl;
                 log << "No. of directories: " << info["directories"] << endl;
 
@@ -168,7 +168,6 @@ int main(int argCount, char **args) {
     string dataFile = projectPath + "/Data/AIS/ships1e8.txt";
     // string queryFile = projectPath + "/Data/OSM/Queries/" + queryType + ".txt";
     // string dataFile = projectPath + "/Data/OSM/data-7e7.txt";
-    int offset = 0;
 
     cout << "---Generation--- " << endl;
 
@@ -177,18 +176,18 @@ int main(int argCount, char **args) {
     if (!log.is_open())
         cout << "Unable to open log.txt";
     // high_resolution_clock::time_point start = high_resolution_clock::now();
-    cout << "Defining MPT..." << endl;
-    MPT index = MPT(directoryCap, pageCap);
-    cout << "Bulkloading MPT..." << endl;
+    cout << "Defining Waffle..." << endl;
+    Waffle index = Waffle(directoryCap, pageCap);
+    cout << "Bulkloading Waffle..." << endl;
     index.bulkload(dataFile, limit);
     /* double hTreeCreationTime =
         duration_cast<microseconds>(high_resolution_clock::now() - start).count(); */
-    // log << "MPT Creation Time: " << hTreeCreationTime << endl;
+    // log << "Waffle Creation Time: " << hTreeCreationTime << endl;
     log << "Directory Capacity: " << directoryCap << endl;
     log << "Page Capacity: " << pageCap << endl;
     /* map<string, double> stats;
     float indexSize = index.size(stats);
-    log << "MPT size in MB: " << float(indexSize / 1e6) << endl;
+    log << "Waffle size in MB: " << float(indexSize / 1e6) << endl;
     log << "No. of pages: " << stats["pages"] << endl;
     log << "No. of directories: " << stats["directories"] << endl; */
 

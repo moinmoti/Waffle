@@ -5,13 +5,12 @@
 
 using namespace std;
 
-class MPT {
+struct Waffle {
 
-public:
     Node *root;
 
-    MPT(int, int);
-    ~MPT();
+    Waffle(int, int);
+    ~Waffle();
 
     void snapshot() const;
     void load(string, long);

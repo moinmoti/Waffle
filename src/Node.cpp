@@ -141,7 +141,6 @@ void Node::fusion(Node *parent) {
 }
 
 Info Node::insertPt(Record pt) {
-    auto getArea = [](array<float, 4> r) { return (r[3] - r[1]) * (r[2] - r[0]); };
     Info info;
     int key = -1;
 
@@ -327,7 +326,7 @@ vector<Node *> Node::splitDirectory(Node *pn) {
 vector<Node *> Node::splitPage(Node *pn, long splitPos) {
     bool axis = (rect[2] - rect[0]) < (rect[3] - rect[1]);
     sort(all(points.value()),
-        [axis](const Record &l, const Record &r) { return l.data[axis] < r.data[axis]; });
+         [axis](const Record &l, const Record &r) { return l.data[axis] < r.data[axis]; });
     Split newSplit = Split();
     newSplit.axis = axis;
     newSplit.pt[axis] = points.value()[splitPos].data[axis];

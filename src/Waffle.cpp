@@ -1,10 +1,10 @@
-#include "MPT.h"
+#include "Waffle.h"
 
 void printRect(string Rect, array<float, 4> r) {
     cerr << Rect << ": " << r[0] << " | " << r[1] << " | " << r[2] << " | " << r[3] << endl;
 }
 
-MPT::MPT(int _directoryCap, int _pageCap) {
+Waffle::Waffle(int _directoryCap, int _pageCap) {
     Node::directoryCap = _directoryCap;
     Node::pageCap = _pageCap;
     root = new Node(1);
@@ -16,9 +16,9 @@ MPT::MPT(int _directoryCap, int _pageCap) {
     root->contents->emplace_back(firstPage);
 }
 
-MPT::~MPT() {}
+Waffle::~Waffle() {}
 
-void MPT::bulkload(string filename, long limit) {
+void Waffle::bulkload(string filename, long limit) {
     string line;
     ifstream file(filename);
 
@@ -70,7 +70,7 @@ void MPT::bulkload(string filename, long limit) {
     }
 }
 
-Info MPT::deleteQuery(Record p) {
+Info Waffle::deleteQuery(Record p) {
     Node *node = root;
     while (node->contents) {
         auto cn = node->contents->begin();
@@ -83,7 +83,7 @@ Info MPT::deleteQuery(Record p) {
     return stats;
 }
 
-Info MPT::insertQuery(Record pt) {
+Info Waffle::insertQuery(Record pt) {
     if (root->minSqrDist(pt.data) > 0)
         root->rect = root->getRect(pt.data);
     Info stats = root->insertPt(pt);
@@ -122,7 +122,7 @@ struct knnNode {
     }
 };
 
-Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
+Info Waffle::kNNQuery(array<float, 2> queryPt, int k) {
     auto calcSqrDist = [](array<float, 2> x, array<float, 2> y) {
         return pow((x[0] - y[0]), 2) + pow((x[1] - y[1]), 2);
     };
@@ -197,15 +197,15 @@ Info MPT::kNNQuery(array<float, 2> queryPt, int k) {
     return info;
 }
 
-Info MPT::rangeQuery(array<float, 4> query) {
+Info Waffle::rangeQuery(array<float, 4> query) {
     Info stats = root->rangeSearch(query);
     int pointCount = stats.points;
     // trace(pointCount);
     return stats;
 }
 
-void MPT::snapshot() const {
-    ofstream log("MPT.csv");
+void Waffle::snapshot() const {
+    ofstream log("Waffle.csv");
     stack<Node *> toVisit({root});
     Node *dir;
     while (!toVisit.empty()) {
@@ -231,7 +231,7 @@ void MPT::snapshot() const {
     log.close();
 }
 
-int MPT::size(map<string, double> &stats) const {
+int Waffle::size(map<string, double> &stats) const {
     int totalSize = 2 * sizeof(int);
     int pageSize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *);
     int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *) + sizeof(Node::Ledger);
