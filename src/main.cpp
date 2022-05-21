@@ -58,7 +58,7 @@ void deleteQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stat
     for (uint i = 0; i < p.data.size(); i++)
         p.data[i] = get<1>(q)[i];
     p.id = get<2>(q);
-    Info info = index->deleteQuery(p);
+    index->deleteQuery(p);
     stats.del.count++;
 }
 
@@ -138,8 +138,8 @@ void evaluate(Waffle *index, string queryFile, string logFile) {
                 map<string, double> info;
                 float indexSize = index->size(info);
                 log << "Waffle size in MB: " << float(indexSize / 1e6) << endl;
-                log << "No. of pages: " << info["pages"] << endl;
                 log << "No. of directories: " << info["directories"] << endl;
+                log << "No. of pages: " << info["pages"] << endl;
 
                 log << endl << "************************************************" << endl;
 
@@ -159,15 +159,15 @@ int main(int argCount, char **args) {
     string queryType = string(args[2]);
     int directoryCap = stoi(string(args[3]));
     int pageCap = stoi(string(args[4]));
-    long limit = 1e8;
+    long limit = 7e7;
     string sign = "-" + to_string(directoryCap);
 
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";
-    string queryFile = projectPath + "/Data/AIS/Queries/" + queryType + ".txt";
-    string dataFile = projectPath + "/Data/AIS/ships1e8.txt";
-    // string queryFile = projectPath + "/Data/OSM/Queries/" + queryType + ".txt";
-    // string dataFile = projectPath + "/Data/OSM/data-7e7.txt";
+    /* string queryFile = projectPath + "/Data/AIS/Queries/" + queryType + ".txt";
+    string dataFile = projectPath + "/Data/AIS/ships1e8.txt"; */
+    string queryFile = projectPath + "/Data/OSM/Queries/" + queryType + ".txt";
+    string dataFile = projectPath + "/Data/OSM/data-7e7.txt";
 
     cout << "---Generation--- " << endl;
 
@@ -178,8 +178,8 @@ int main(int argCount, char **args) {
     // high_resolution_clock::time_point start = high_resolution_clock::now();
     cout << "Defining Waffle..." << endl;
     Waffle index = Waffle(directoryCap, pageCap);
-    cout << "Bulkloading Waffle..." << endl;
-    index.bulkload(dataFile, limit);
+    /* cout << "Bulkloading Waffle..." << endl;
+    index.bulkload(dataFile, limit); */
     /* double hTreeCreationTime =
         duration_cast<microseconds>(high_resolution_clock::now() - start).count(); */
     // log << "Waffle Creation Time: " << hTreeCreationTime << endl;
