@@ -202,7 +202,7 @@ Info Node::insertPt(Record pt) {
     }
     ledger->pages += info.pages;
     ledger->points++;
-    ledger->writes++;
+    ledger->writes += info.writes;
     return info;
 }
 
@@ -230,13 +230,14 @@ Info Node::rangeSearch(array<float, 4> query) {
                 info += cn->rangeSearch(query);
         }
         ledger->pages += info.pages;
+        ledger->reads += info.reads;
         info += refresh();
     }
     return info;
 }
 
 Info Node::refresh() {
-    ledger->reads++;
+    // ledger->reads++;
     float fat = (ledger->pages / ceil(ledger->points / float(pageCap))) - 1;
     float tolerance = ledger->writes / (ledger->writes + ledger->reads);
     // trace(fat, tolerance);
@@ -247,6 +248,7 @@ Info Node::refresh() {
         splits->clear();
         fission(this);
         ledger->pages = contents->size();
+        ledger->writes += numPages + ledger->pages;
         points->clear();
         points.reset();
         return Info{ledger->pages - numPages, 0, 0, numPages + ledger->pages};
@@ -278,8 +280,8 @@ int Node::size() const {
     if (points)
         typeSize = sizeof(vector<array<float, 2>>);
     else
-        typeSize = sizeof(vector<Node *>) + contents->size() * sizeof(Node *) +
-                   sizeof(vector<Split *>) + splits->size() * (sizeof(Split *) + sizeof(Split));
+        typeSize = sizeof(vector<Node *>) + contents->size() * sizeof(void *) +
+                   sizeof(vector<Split *>) + splits->size() * (sizeof(void *) + sizeof(Split));
     int totalSize = typeSize + rectSize;
     return totalSize;
 }
@@ -326,7 +328,7 @@ vector<Node *> Node::splitDirectory(Node *pn) {
 vector<Node *> Node::splitPage(Node *pn, long splitPos) {
     bool axis = (rect[2] - rect[0]) < (rect[3] - rect[1]);
     sort(all(points.value()),
-         [axis](const Record &l, const Record &r) { return l.data[axis] < r.data[axis]; });
+        [axis](const Record &l, const Record &r) { return l.data[axis] < r.data[axis]; });
     Split newSplit = Split();
     newSplit.axis = axis;
     newSplit.pt[axis] = points.value()[splitPos].data[axis];

@@ -116,6 +116,7 @@ struct knnNode {
             for (auto kn : branch)
                 info += kn->track();
             self->ledger->pages += info.pages;
+            self->ledger->reads += info.reads;
             info += self->refresh();
         }
         return info;
@@ -233,8 +234,8 @@ void Waffle::snapshot() const {
 
 int Waffle::size(map<string, double> &stats) const {
     int totalSize = 2 * sizeof(int);
-    int pageSize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *);
-    int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(Node *) + sizeof(Node::Ledger);
+    int pageSize = 4 * sizeof(float) + sizeof(int) + sizeof(void *);
+    int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(void *) + sizeof(Node::Ledger);
     int splitSize = 2 * sizeof(float) + sizeof(bool);
     stack<Node *> toVisit({root});
     Node *directory;
