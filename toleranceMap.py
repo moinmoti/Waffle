@@ -16,7 +16,12 @@ with open("Waffle.csv") as f:
                     round(float(line.split(",")[6]), 2),
                 )
             )
+            tolerance.append(nodes[-1][4])
         # if i == 10000: break
+
+maxTol = max(tolerance)
+minTol = min(tolerance)
+meanTol = round(mean(tolerance), 2)
 
 fig = go.Figure()
 
@@ -42,6 +47,7 @@ fig.update_yaxes(
 
 # Add shapes
 for n in nodes:
+    alpha = (n[4] - minTol) / (maxTol - minTol)
     fig.add_trace(
         go.Scatter(
             mode="lines",
@@ -50,12 +56,12 @@ for n in nodes:
             fill="toself",
             name="",
             text=str(n[4]),
-            # fillcolor="rgba(255,143,0," + str(alpha) + ")",
+            fillcolor="rgba(255,143,0," + str(alpha) + ")",
             line=dict(color="black", width=0.25),
         )
     )
 
-""" fig.add_trace(
+fig.add_trace(
     go.Scatter(
         x=[None],
         y=[None],
@@ -77,12 +83,12 @@ for n in nodes:
             ),
         ),
     )
-) """
+)
 
 # fig.update_shapes(dict(xref='x', yref='y', line=dict(color="black")))
 fig.update_layout(
     showlegend=False,
-    # title="Tolerance map at height=0 for 1:1 read-write workload",
+    title="Tolerance map at height=0 for 1:1 read-write workload",
     xaxis_title="Longitude",
     yaxis_title="Latitude",
     font_size=6,
