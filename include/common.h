@@ -43,6 +43,8 @@ void __f(const char *names, Arg1 &&arg1, Args &&... args) {
 constexpr uint D = 2;
 constexpr bool V = 0;
 constexpr bool H = 1;
+using Rect = array<float, 2*D>;
+using Point = array<float, D>;
 constexpr double dist(float x1, float y1, float x2, float y2) {
     return pow(x1 - x2, 2) + pow(y1 - y2, 2);
 }
@@ -51,9 +53,9 @@ constexpr double distManhattan(float x1, float y1, float x2, float y2) {
 }
 constexpr uint oppDir(uint d) {return (d + D) % (D * 2);};
 
-struct Record {
+struct Entry {
     int id;
-    array<float, 2> data;
+    Point pt;
 };
 
 struct Info {

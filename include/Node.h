@@ -13,15 +13,15 @@ struct Node {
     };
 
     struct Split {
-        std::array<float, 2> pt;
         bool axis;
+        Point pt;
     };
 
     static int directoryCap;
     static int pageCap;
 
     int height = 0;
-    array<float, 4> rect = {
+    Rect rect = {
         numeric_limits<float>::max(),
         numeric_limits<float>::max(),
         numeric_limits<float>::lowest(),
@@ -34,25 +34,25 @@ struct Node {
     optional<vector<Split>> splits;
 
     // Page specific members
-    optional<vector<Record>> points;
+    optional<vector<Entry>> points;
 
     // Rect methods
-    bool containsPt(array<float, 2> p) const;
-    array<float, 2> getCenter() const;
-    bool inside(array<float, 4>) const;
-    double minSqrDist(array<float, 4>) const;
-    double minSqrDist(array<float, 2>) const;
-    bool overlap(array<float, 4>) const;
-    array<float, 4> getRect(array<float, 2>);
+    bool containsPt(Point p) const;
+    Point getCenter() const;
+    bool inside(Rect) const;
+    double minSqrDist(Rect) const;
+    double minSqrDist(Point) const;
+    bool overlap(Rect) const;
+    Rect getRect(Point);
 
     // Node methods
     void fission(Node *);
     void fusion(Node *);
-    Info insertPt(Record p);
+    Info insertPt(Entry p);
     array<long, 2> getInfo() const;
-    Info rangeSearch(array<float, 4>);
+    Info rangeSearch(Rect);
     Info refresh();
-    int scan(array<float, 4>) const;
+    int scan(Rect) const;
     int size() const;
     vector<Node*> splitDirectory(Node *);
     vector<Node*> splitPage(Node *, long);
@@ -60,4 +60,18 @@ struct Node {
 
     Node(int = 0);
     ~Node();
+};
+
+struct Directory: Node {
+    static int capacity;
+    Ledger ledger;
+    vector<Node*> sections;
+    vector<Split> splits;
+
+};
+
+struct Page: Node {
+    static int capacity;
+    vector<Entry> entries;
+
 };
