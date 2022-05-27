@@ -206,7 +206,7 @@ Info Waffle::rangeQuery(array<float, 4> query) {
 }
 
 void Waffle::snapshot() const {
-    ofstream log("Waffle.csv");
+    ofstream log("Snapshot/Waffle.csv");
     stack<Node *> toVisit({root});
     Node *dir;
     while (!toVisit.empty()) {
