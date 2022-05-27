@@ -1,10 +1,13 @@
 #include "Waffle.h"
 
+constexpr bool BULKLOAD = true;
+constexpr bool EVAL = true;
+constexpr bool SNAPSHOT = true;
+
 struct Stats {
     struct StatType {
         long count = 0;
         long io = 0;
-        // long time = 0;
     };
 
     StatType del;
@@ -113,7 +116,6 @@ void evaluate(Waffle *index, string queryFile, string logFile) {
                 for (auto &l : stats.range) {
                     log << setw(8) << l.first << setw(8) << l.second.count << setw(8)
                         << roundit(l.second.io / double(l.second.count)) << endl;
-                    // << roundit(l.second.time / double(l.second.count)) << endl;
                 }
 
                 log << endl << "------------------KNN Queries-------------------" << endl;
@@ -122,14 +124,11 @@ void evaluate(Waffle *index, string queryFile, string logFile) {
                 for (auto &l : stats.knn) {
                     log << setw(8) << l.first << setw(8) << l.second.count << setw(8)
                         << roundit(l.second.io / double(l.second.count)) << endl;
-                    // << roundit(l.second.time / double(l.second.count)) << endl;
                 }
 
                 log << endl << "------------------Insert Queries-------------------" << endl;
                 log << "Count:\t" << stats.insert.count << endl;
                 log << "I/O:\t" << stats.insert.io / double(stats.insert.count) << endl;
-                // log << "Time: \t" << stats.insert.time / double(stats.insert.count) << endl <<
-                // endl;
 
                 log << endl << "------------------ Reloading -------------------" << endl;
                 log << "Count:\t" << stats.reload.count << endl;
@@ -146,7 +145,6 @@ void evaluate(Waffle *index, string queryFile, string logFile) {
                 log.close();
             } else
                 cerr << "Invalid Query!!!" << endl;
-            // cerr << endl;
         }
         file.close();
     }
@@ -159,15 +157,12 @@ int main(int argCount, char **args) {
     string queryType = string(args[2]);
     int directoryCap = stoi(string(args[3]));
     int pageCap = stoi(string(args[4]));
-    long limit = 7e7;
-    string sign = "-" + to_string(directoryCap);
 
+    string sign = "-" + to_string(directoryCap);
     string expPath = projectPath + "/Experiments/";
     string prefix = expPath + queryType + "/";
-    /* string queryFile = projectPath + "/Data/AIS/Queries/" + queryType + ".txt";
-    string dataFile = projectPath + "/Data/AIS/ships1e8.txt"; */
-    string queryFile = projectPath + "/Data/OSM/Queries/" + queryType + ".txt";
-    string dataFile = projectPath + "/Data/OSM/data-7e7.txt";
+    string queryFile = projectPath + "/Queries/" + queryType + ".txt";
+    string dataFile = projectPath + "/dataFile.txt";
 
     cout << "---Generation--- " << endl;
 
@@ -175,14 +170,12 @@ int main(int argCount, char **args) {
     ofstream log(logFile);
     if (!log.is_open())
         cout << "Unable to open log.txt";
-    // high_resolution_clock::time_point start = high_resolution_clock::now();
     cout << "Defining Waffle..." << endl;
     Waffle index = Waffle(directoryCap, pageCap);
-    /* cout << "Bulkloading Waffle..." << endl;
-    index.bulkload(dataFile, limit); */
-    /* double hTreeCreationTime =
-        duration_cast<microseconds>(high_resolution_clock::now() - start).count(); */
-    // log << "Waffle Creation Time: " << hTreeCreationTime << endl;
+    if constexpr (BULKLOAD) {
+        cout << "Bulkloading Waffle..." << endl;
+        index.bulkload(dataFile, 1e7);
+    }
     log << "Directory Capacity: " << directoryCap << endl;
     log << "Page Capacity: " << pageCap << endl;
     /* map<string, double> stats;
@@ -191,7 +184,11 @@ int main(int argCount, char **args) {
     log << "No. of pages: " << stats["pages"] << endl;
     log << "No. of directories: " << stats["directories"] << endl; */
 
-    cout << "---Evaluation--- " << endl;
-    evaluate(&index, queryFile, logFile);
+    if constexpr (EVAL) {
+        cout << "---Evaluation--- " << endl;
+        evaluate(&index, queryFile, logFile);
+    }
+    if constexpr (SNAPSHOT)
+        index.snapshot();
     return 0;
 }
