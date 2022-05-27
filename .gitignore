@@ -3,9 +3,10 @@ build
 compile_commands.json
 
 # Other
-Experiments
-Snapshots
 Data
+Experiments
+Queries
+Snapshots
 .clangd
 *._*
 *DS_Store*
@@ -14,4 +15,5 @@ Data
 *.err
 *.json
 .python-version
+dataFile.txt
 Index
