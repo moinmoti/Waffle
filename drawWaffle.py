@@ -14,7 +14,6 @@ with open("Snapshots/Waffle.csv") as f:
                     float(line.split(",")[5]),
                 )
             )
-        # if i == 10000: break
 
 fig = go.Figure()
 
@@ -38,6 +37,8 @@ fig.update_yaxes(
     linecolor="black",
 )
 
+perimeter = 0
+
 # Add shapes
 for n in nodes:
     fig.add_trace(
@@ -48,6 +49,12 @@ for n in nodes:
             line=dict(color="black", width=0.25),
         )
     )
+    perimeter += 2 * ((n[2]-n[0]) + (n[3]-n[1]))
+
+numNodes = len(nodes)
+avgLen = perimeter/numNodes
+avgCardinality = 1e7/numNodes
+print(f'Total Number of Nodes: {numNodes}\nAverage Perimeter: {avgLen}\nAverage Cardinality: {avgCardinality}')
 
 """ fig.add_trace(
     go.Scatter(
