@@ -49,12 +49,14 @@ for n in nodes:
             line=dict(color="black", width=0.25),
         )
     )
-    perimeter += 2 * ((n[2]-n[0]) + (n[3]-n[1]))
+    perimeter += 2 * ((n[2] - n[0]) + (n[3] - n[1]))
 
 numNodes = len(nodes)
-avgLen = perimeter/numNodes
-avgCardinality = 1e7/numNodes
-print(f'Total Number of Nodes: {numNodes}\nAverage Perimeter: {avgLen}\nAverage Cardinality: {avgCardinality}')
+avgLen = perimeter / numNodes
+avgCardinality = 1e7 / numNodes
+print(
+    f"Total Number of Nodes: {numNodes}\nAverage Perimeter: {avgLen:.2f}\nAverage Cardinality: {avgCardinality:.2f}"
+)
 
 """ fig.add_trace(
     go.Scatter(
