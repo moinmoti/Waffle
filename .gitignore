@@ -6,10 +6,9 @@ compile_commands.json
 Experiments
 Snapshots
 Data
+.clangd
 *._*
 *DS_Store*
-*.dat
-*.idx
 *.csv
 *.png
 *.err
