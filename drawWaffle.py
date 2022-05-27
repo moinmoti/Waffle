@@ -1,10 +1,9 @@
 import plotly.graph_objects as go
-from statistics import mean
 
-height = 1
+height = 0
 nodes = []
 tolerance = []
-with open("Waffle.csv") as f:
+with open("Snapshots/Waffle.csv") as f:
     for i, line in enumerate(f):
         if int(line.split(",")[0]) == height:
             nodes.append(
@@ -13,7 +12,6 @@ with open("Waffle.csv") as f:
                     float(line.split(",")[3]),
                     float(line.split(",")[4]),
                     float(line.split(",")[5]),
-                    round(float(line.split(",")[6]), 2),
                 )
             )
         # if i == 10000: break
@@ -47,10 +45,6 @@ for n in nodes:
             mode="lines",
             x=[n[0], n[0], n[2], n[2], n[0]],
             y=[n[1], n[3], n[3], n[1], n[1]],
-            fill="toself",
-            name="",
-            text=str(n[4]),
-            # fillcolor="rgba(255,143,0," + str(alpha) + ")",
             line=dict(color="black", width=0.25),
         )
     )
@@ -88,4 +82,4 @@ fig.update_layout(
     font_size=6,
     plot_bgcolor="white",
 )
-fig.write_image(file="Waffle.pdf")
+fig.write_image(file="Snapshots/Waffle.pdf")
