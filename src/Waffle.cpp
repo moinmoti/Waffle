@@ -220,10 +220,10 @@ void Waffle::snapshot() const {
         log << endl;
         for (auto cn : dir->contents.value()) {
             if (cn->points) {
-                /* log << cn->height << "," << cn->points->size();
+                log << cn->height << "," << cn->points->size();
                 for (auto p : cn->rect)
                     log << "," << p;
-                log << endl; */
+                log << endl;
             } else {
                 toVisit.push(cn);
             }
