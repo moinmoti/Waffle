@@ -25,7 +25,7 @@ fig.update_xaxes(
     mirror=True,
     # ticks="outside",
     showticklabels=False,
-    showline=True,
+    showline=False,
     linecolor="black",
 )
 fig.update_yaxes(
@@ -35,7 +35,7 @@ fig.update_yaxes(
     mirror=True,
     # ticks="outside",
     showticklabels=False,
-    showline=True,
+    showline=False,
     linecolor="black",
 )
 
