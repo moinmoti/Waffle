@@ -2,8 +2,7 @@ import plotly.graph_objects as go
 
 height = 0
 nodes = []
-tolerance = []
-with open("Snapshots/Waffle.csv") as f:
+with open("Index.csv") as f:
     for i, line in enumerate(f):
         if int(line.split(",")[0]) == height:
             nodes.append(
@@ -55,34 +54,9 @@ for n in nodes:
 
 numNodes = len(nodes)
 avgLen = perimeter / numNodes
-avgCardinality = 1e7 / numNodes
 print(
-    f"Total Number of Nodes: {numNodes}\nAverage Perimeter: {avgLen:.2f}\nAverage Cardinality: {avgCardinality:.2f}"
+    f"Total Number of Nodes: {numNodes}\nAverage Perimeter: {avgLen:.2f}\n"
 )
-
-""" fig.add_trace(
-    go.Scatter(
-        x=[None],
-        y=[None],
-        mode="markers",
-        marker=dict(
-            cmin=0,
-            cmax=1,
-            colorscale=[[0, "rgba(255,143,0,0)"], [1, "rgba(255,143,0,1)"]],
-            showscale=True,
-            colorbar=dict(
-                title="Node tolerance",
-                tickvals=[0, meanTol, 1],
-                ticktext=[
-                    str(minTol) + " (Min)",
-                    str(meanTol) + " (Mean)",
-                    str(maxTol) + " (Max)",
-                ],
-                ticks="outside",
-            ),
-        ),
-    )
-) """
 
 # fig.update_shapes(dict(xref='x', yref='y', line=dict(color="black")))
 fig.update_layout(
@@ -92,4 +66,4 @@ fig.update_layout(
     height=720,
     width=1440,
 )
-fig.write_image(file="Snapshots/Waffle.png")
+fig.write_image(file="Index.png")

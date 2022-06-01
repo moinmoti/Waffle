@@ -1,9 +1,5 @@
 #include "Waffle.h"
 
-constexpr bool BULKLOAD = true;
-constexpr bool EVAL = false;
-constexpr bool SNAPSHOT = true;
-
 struct Stats {
     struct StatType {
         long count = 0;
@@ -65,13 +61,13 @@ void deleteQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stat
     stats.del.count++;
 }
 
-void evaluate(Waffle *index, string queryFile, string logFile) {
+void evaluate(Waffle *index, string opFile, string logFile) {
     Stats stats;
     auto roundit = [](float val, int d = 2) { return round(val * pow(10, d)) / pow(10, d); };
 
-    cout << "Begin Querying " << queryFile << endl;
+    cout << "Begin Querying " << opFile << endl;
     string line;
-    ifstream file(queryFile);
+    ifstream file(opFile);
     if (file.is_open()) {
         // getline(file, line); // Skip the header line
         while (getline(file, line)) {
@@ -112,15 +108,14 @@ void evaluate(Waffle *index, string queryFile, string logFile) {
 
                 log << "------------------Range Queries-------------------" << endl;
                 log << setw(8) << "Size" << setw(8) << "Count" << setw(8) << "I/O" << setw(8)
-                    << "Time" << endl;
+                    << endl;
                 for (auto &l : stats.range) {
                     log << setw(8) << l.first << setw(8) << l.second.count << setw(8)
                         << roundit(l.second.io / double(l.second.count)) << endl;
                 }
 
                 log << endl << "------------------KNN Queries-------------------" << endl;
-                log << setw(8) << "k" << setw(8) << "Count" << setw(8) << "I/O" << setw(8) << "Time"
-                    << endl;
+                log << setw(8) << "k" << setw(8) << "Count" << setw(8) << "I/O" << setw(8) << endl;
                 for (auto &l : stats.knn) {
                     log << setw(8) << l.first << setw(8) << l.second.count << setw(8)
                         << roundit(l.second.io / double(l.second.count)) << endl;
@@ -152,41 +147,38 @@ void evaluate(Waffle *index, string queryFile, string logFile) {
 }
 
 int main(int argCount, char **args) {
-    map<string, string> config;
-    string projectPath = string(args[1]);
-    string queryType = string(args[2]);
-    int directoryCap = stoi(string(args[3]));
-    int pageCap = stoi(string(args[4]));
+    string dataFile, opFile;
+    if constexpr (BULKLOAD) {
+        if (argCount != 3) {
+            cerr << "Error: Incorrect usage, please refer to the README" << endl;
+            return 0;
+        }
+        dataFile = string(args[1]);
+        opFile = string(args[2]);
+    } else {
+        if (argCount != 2) {
+            cerr << "Error: Incorrect usage, please refer to the README" << endl;
+            return 0;
+        }
+        opFile = string(args[1]);
+    }
 
-    string sign = "-" + to_string(directoryCap);
-    string expPath = projectPath + "/Experiments/";
-    string prefix = expPath + queryType + "/";
-    string queryFile = projectPath + "/Queries/" + queryType + ".txt";
-    string dataFile = projectPath + "/dataFile.txt";
-
-    cout << "---Generation--- " << endl;
-
-    string logFile = prefix + "log" + sign + ".txt";
+    string logFile = "log.txt";
     ofstream log(logFile);
     if (!log.is_open())
         cout << "Unable to open log.txt";
     cout << "Defining Waffle..." << endl;
-    Waffle index = Waffle(directoryCap, pageCap);
+    Waffle index = Waffle(FANOUT, PAGECAP);
     if constexpr (BULKLOAD) {
         cout << "Bulkloading Waffle..." << endl;
-        index.bulkload(dataFile, 1e7);
+        index.bulkload(dataFile, BLL);
     }
-    log << "Directory Capacity: " << directoryCap << endl;
-    log << "Page Capacity: " << pageCap << endl;
-    /* map<string, double> stats;
-    float indexSize = index.size(stats);
-    log << "Waffle size in MB: " << float(indexSize / 1e6) << endl;
-    log << "No. of pages: " << stats["pages"] << endl;
-    log << "No. of directories: " << stats["directories"] << endl; */
+    log << "Directory Capacity: " << FANOUT << endl;
+    log << "Page Capacity: " << PAGECAP << endl;
 
     if constexpr (EVAL) {
         cout << "---Evaluation--- " << endl;
-        evaluate(&index, queryFile, logFile);
+        evaluate(&index, opFile, logFile);
     }
     if constexpr (SNAPSHOT)
         index.snapshot();

@@ -181,16 +181,18 @@ Info Waffle::kNNQuery(array<float, 2> queryPt, int k) {
             break;
     }
 
-    /* double sqrDist;
-    Record pt;
-    if (k == 32) {
-        while (!knnPts.empty()) {
-            pt = knnPts.top().pt;
-            sqrDist = knnPts.top().dist;
-            knnPts.pop();
-            trace(pt.id);
+    if constexpr (DEBUG) {
+        double sqrDist;
+        Record pt;
+        if (k == 32) {
+            while (!knnPts.empty()) {
+                pt = knnPts.top().pt;
+                sqrDist = knnPts.top().dist;
+                knnPts.pop();
+                trace(pt.id, sqrDist);
+            }
         }
-    } */
+    }
 
     Info info = rootKNode->track();
     for (auto kn : pool)
@@ -200,13 +202,15 @@ Info Waffle::kNNQuery(array<float, 2> queryPt, int k) {
 
 Info Waffle::rangeQuery(array<float, 4> query) {
     Info stats = root->rangeSearch(query);
-    // int pointCount = stats.points;
-    // trace(pointCount);
+    if constexpr (DEBUG) {
+        int pointCount = stats.points;
+        trace(pointCount);
+    }
     return stats;
 }
 
 void Waffle::snapshot() const {
-    ofstream log("Snapshots/Waffle.csv");
+    ofstream log("Index.csv");
     stack<Node *> toVisit({root});
     Node *dir;
     while (!toVisit.empty()) {

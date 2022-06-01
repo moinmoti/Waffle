@@ -1,19 +1,22 @@
-# Compiler Specific
+# Build Files
 build
 compile_commands.json
+Index
+
+# Extensions
+*.csv
+*.png
+*.err
+*.json
+*run.sh
+.python-version
 
 # Other
-Data
 Experiments
 Queries
 Snapshots
 .clangd
 *._*
 *DS_Store*
-*.csv
-*.png
-*.err
-*.json
-.python-version
 dataFile.txt
-Index
+log.txt

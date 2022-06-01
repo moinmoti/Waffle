@@ -4,7 +4,7 @@ from statistics import mean
 height = 1
 nodes = []
 tolerance = []
-with open("Waffle.csv") as f:
+with open("Index.csv") as f:
     for i, line in enumerate(f):
         if int(line.split(",")[0]) == height:
             nodes.append(
@@ -93,5 +93,7 @@ fig.update_layout(
     yaxis_title="Latitude",
     font_size=6,
     plot_bgcolor="white",
+    height=720,
+    width=1440,
 )
-fig.write_image(file="Waffle.pdf")
+fig.write_image(file="Index.png")

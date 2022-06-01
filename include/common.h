@@ -1,5 +1,7 @@
 #pragma once
 
+#include "config.h"
+
 #include <algorithm>
 #include <array>
 #include <cassert>
