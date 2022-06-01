@@ -119,7 +119,7 @@ Make sure to enable `BULKLOAD` in the config file before executing this script.
 
 ## Remarks
 
-The program runs fine for benchmarking purposes, but may undergo refactoring to improve overall readability and code aesthetics. Users are advised to clone the master branch for the best version of the program. Follow this [link](https://gitlab.com/moinmoti/waffle) to access the repository.
+The program runs fine for benchmarking purposes, but may undergo refactoring to improve overall readability and code aesthetics. Users are advised to clone the main branch for the best version of the program. Follow this [link](https://gitlab.com/moinmoti/waffle) to access the repository.
 
 ## Contact
 
