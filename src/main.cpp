@@ -1,7 +1,7 @@
 #include "Waffle.h"
 
 constexpr bool BULKLOAD = true;
-constexpr bool EVAL = true;
+constexpr bool EVAL = false;
 constexpr bool SNAPSHOT = true;
 
 struct Stats {
