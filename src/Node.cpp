@@ -8,29 +8,27 @@ int Node::pageCap;
 // Rectangle Methods
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void printNode(string str, array<float, 4> r) {
+void printNode(string str, Rect r) {
     cerr << str << ": " << r[0] << " | " << r[1] << " | " << r[2] << " | " << r[3] << endl;
 }
 
-bool Node::containsPt(array<float, 2> p) const {
+bool Node::containsPt(Point p) const {
     bool result = true;
     for (int i = 0; i < D; i++)
         result = result & (rect[i] <= p[i]) & (rect[i + D] >= p[i]);
     return result;
 }
 
-bool Node::inside(array<float, 4> r) const {
+bool Node::inside(Rect r) const {
     bool result = true;
     for (int i = 0; i < D; i++)
         result = result & (rect[i] >= r[i]) & (rect[i + D] <= r[i + D]);
     return result;
 }
 
-array<float, 2> Node::getCenter() const {
-    return array<float, 2>{(rect[0] + rect[2]) / 2, (rect[1] + rect[3]) / 2};
-}
+Point Node::getCenter() const { return Point{(rect[0] + rect[2]) / 2, (rect[1] + rect[3]) / 2}; }
 
-double Node::minSqrDist(array<float, 4> r) const {
+double Node::minSqrDist(Rect r) const {
     bool left = r[2] < rect[0];
     bool right = rect[2] < r[0];
     bool bottom = r[3] < rect[1];
@@ -56,7 +54,7 @@ double Node::minSqrDist(array<float, 4> r) const {
     return 0;
 }
 
-double Node::minSqrDist(array<float, 2> q) const {
+double Node::minSqrDist(Point q) const {
     bool left = q[0] < rect[0];
     bool right = rect[2] < q[0];
     bool bottom = q[1] < rect[1];
@@ -82,15 +80,15 @@ double Node::minSqrDist(array<float, 2> q) const {
     return 0;
 }
 
-bool Node::overlap(array<float, 4> r) const {
+bool Node::overlap(Rect r) const {
     for (int i = 0; i < D; i++)
         if (rect[i] > r[i + D] || r[i] > rect[i + D])
             return false;
     return true;
 }
 
-array<float, 4> Node::getRect(array<float, 2> p) {
-    array<float, 4> r = rect;
+Rect Node::getRect(Point p) {
+    Rect r = rect;
     if (r[0] > p[0])
         r[0] = p[0];
     if (r[1] > p[1])
@@ -140,7 +138,7 @@ void Node::fusion(Node *parent) {
     }
 }
 
-Info Node::insertPt(Record pt) {
+Info Node::insertPt(Entry pt) {
     Info info;
     int key = -1;
 
@@ -151,7 +149,7 @@ Info Node::insertPt(Record pt) {
         }
     }
     // If no child node contains the pt, find one to expand
-    array<float, 4> container = rect;
+    Rect container = rect;
     if (key < 0) {
         for (auto s : splits.value()) {
             bool lCheck = container[0] < s.pt[0];
@@ -219,7 +217,7 @@ array<long, 2> Node::getInfo() const {
     return {numPages, numPoints};
 }
 
-Info Node::rangeSearch(array<float, 4> query) {
+Info Node::rangeSearch(Rect query) {
     Info info;
     if (points) {
         info.reads = 1;
@@ -255,7 +253,7 @@ Info Node::refresh() {
     return Info();
 }
 
-inline bool overlaps(array<float, 4> r, array<float, 2> p) {
+inline bool overlaps(Rect r, Point p) {
     for (int i = 0; i < D; i++) {
         if (r[i] > p[i] || p[i] > r[i + D])
             return false;
@@ -263,7 +261,7 @@ inline bool overlaps(array<float, 4> r, array<float, 2> p) {
     return true;
 }
 
-int Node::scan(array<float, 4> query) const {
+int Node::scan(Rect query) const {
     int totalPoints = 0;
     if (inside(query))
         return points->size();
@@ -277,7 +275,7 @@ int Node::size() const {
     int rectSize = sizeof(float) * 4;
     int typeSize = 0;
     if (points)
-        typeSize = sizeof(vector<array<float, 2>>);
+        typeSize = sizeof(vector<Point>);
     else
         typeSize = sizeof(vector<Node *>) + contents->size() * sizeof(void *) +
                    sizeof(vector<Split *>) + splits->size() * (sizeof(void *) + sizeof(Split));
@@ -327,7 +325,7 @@ vector<Node *> Node::splitDirectory(Node *pn) {
 vector<Node *> Node::splitPage(Node *pn, long splitPos) {
     bool axis = (rect[2] - rect[0]) < (rect[3] - rect[1]);
     sort(all(points.value()),
-        [axis](const Record &l, const Record &r) { return l.data[axis] < r.data[axis]; });
+        [axis](const Entry &l, const Entry &r) { return l.data[axis] < r.data[axis]; });
     Split newSplit = Split();
     newSplit.axis = axis;
     newSplit.pt[axis] = points.value()[splitPos].data[axis];
@@ -337,8 +335,8 @@ vector<Node *> Node::splitPage(Node *pn, long splitPos) {
     vector<Node *> pages = {new Node(), new Node()};
 
     // Splitting points
-    pages[0]->points = vector<Record>(points->begin(), points->begin() + splitPos);
-    pages[1]->points = vector<Record>(points->begin() + splitPos, points->end());
+    pages[0]->points = vector<Entry>(points->begin(), points->begin() + splitPos);
+    pages[1]->points = vector<Entry>(points->begin() + splitPos, points->end());
 
     // cerr << "Make bounding rectangles" << endl;
     for (auto page : pages) {
@@ -359,7 +357,7 @@ vector<Node *> Node::splitPage(Node *pn, long splitPos) {
 }
 
 void Node::unbind() {
-    points = vector<Record>();
+    points = vector<Entry>();
     for (auto node : contents.value()) {
         if (node->contents)
             node->unbind();

@@ -14,7 +14,7 @@ struct Stats {
 };
 
 void knnQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats) {
-    array<float, 2> p;
+    Point p;
     for (uint i = 0; i < p.size(); i++)
         p[i] = get<1>(q)[i];
     int k = get<2>(q);
@@ -28,7 +28,7 @@ void knnQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats) 
 }
 
 void rangeQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats) {
-    array<float, 4> query;
+    Rect query;
     for (uint i = 0; i < query.size(); i++)
         query[i] = get<1>(q)[i];
     float rs = get<2>(q);
@@ -43,7 +43,7 @@ void rangeQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats
 }
 
 void insertQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats) {
-    Record p;
+    Entry p;
     for (uint i = 0; i < p.data.size(); i++)
         p.data[i] = get<1>(q)[i];
     p.id = get<2>(q);
@@ -53,7 +53,7 @@ void insertQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stat
 }
 
 void deleteQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats) {
-    Record p;
+    Entry p;
     for (uint i = 0; i < p.data.size(); i++)
         p.data[i] = get<1>(q)[i];
     p.id = get<2>(q);

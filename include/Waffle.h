@@ -15,9 +15,9 @@ struct Waffle {
     void snapshot() const;
     void load(string, long);
     void bulkload(string, long);
-    Info rangeQuery(array<float, 4>);
-    Info deleteQuery(Record);
-    Info insertQuery(Record);
+    Info rangeQuery(Rect);
+    Info deleteQuery(Entry);
+    Info insertQuery(Entry);
     Info kNNQuery(array<float, 2>, int);
     void insertPoint(Node *, Node *, array<float, 2>);
     int size(map<string, double> &) const;
