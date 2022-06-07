@@ -44,8 +44,8 @@ void rangeQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats
 
 void insertQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats) {
     Entry p;
-    for (uint i = 0; i < p.data.size(); i++)
-        p.data[i] = get<1>(q)[i];
+    for (uint i = 0; i < p.pt.size(); i++)
+        p.pt[i] = get<1>(q)[i];
     p.id = get<2>(q);
     Info info = index->insertQuery(p);
     stats.insert.io += info.writes;
@@ -54,8 +54,8 @@ void insertQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stat
 
 void deleteQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats) {
     Entry p;
-    for (uint i = 0; i < p.data.size(); i++)
-        p.data[i] = get<1>(q)[i];
+    for (uint i = 0; i < p.pt.size(); i++)
+        p.pt[i] = get<1>(q)[i];
     p.id = get<2>(q);
     index->deleteQuery(p);
     stats.del.count++;
@@ -129,11 +129,12 @@ void evaluate(Waffle *index, string opFile, string logFile) {
                 log << "Count:\t" << stats.reload.count << endl;
                 log << "I/O (overall):\t" << stats.reload.io << endl << endl;
 
-                map<string, double> info;
-                float indexSize = index->size(info);
+                About about;
+                float indexSize = index->size(about);
                 log << "Waffle size in MB: " << float(indexSize / 1e6) << endl;
-                log << "No. of directories: " << info["directories"] << endl;
-                log << "No. of pages: " << info["pages"] << endl;
+                log << "No. of directories: " << about.directories << endl;
+                log << "No. of pages: " << about.pages << endl;
+                log << "No. of splits: " << about.splits << endl;
 
                 log << endl << "************************************************" << endl;
 

@@ -3,7 +3,9 @@ project('Waffle', 'cpp', default_options: ['cpp_std=c++17', 'buildtype=debugopti
 incdir = include_directories('include')
 src = [
   'src/main.cpp',
+  'src/Directory.cpp',
   'src/Node.cpp',
+  'src/Page.cpp',
   'src/Waffle.cpp',
 ]
 

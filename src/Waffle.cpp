@@ -5,26 +5,25 @@ void printRect(string str, Rect r) {
 }
 
 Waffle::Waffle(int _directoryCap, int _pageCap) {
-    Node::directoryCap = _directoryCap;
-    Node::pageCap = _pageCap;
-    root = new Node(1);
-    root->ledger->pages = 1;
-    root->ledger->points = 1;
+    Directory::capacity = _directoryCap;
+    Page::capacity = _pageCap;
+    root = new Directory();
+    Directory *dRoot = static_cast<Directory *>(root);
+    dRoot->ledger = Directory::Ledger{.pages = 1, .points = 1};
 
-    Node *firstPage = new Node();
-    firstPage->points = vector<Entry>();
-    root->contents->emplace_back(firstPage);
+    Node *firstPage = new Page();
+    dRoot->contents.emplace_back(firstPage);
 }
-
-Waffle::~Waffle() {}
 
 void Waffle::bulkload(string filename, long limit) {
     string line;
     ifstream file(filename);
 
     int i = 0;
-    vector<Entry> Points;
-    Points.reserve(limit);
+    // vector<Entry> Points;
+    Directory *dRoot = static_cast<Directory *>(root);
+    Page *firstPage = static_cast<Page *>(dRoot->contents.front());
+    firstPage->entries.reserve(limit);
     if (file.is_open()) {
         // getline(file, line);
         while (getline(file, line)) {
@@ -32,18 +31,12 @@ void Waffle::bulkload(string filename, long limit) {
             float lat, lon;
             istringstream buf(line);
             buf >> id >> lon >> lat;
-            Entry pt;
-            pt.id = id;
-            pt.data = {lon, lat};
-            Points.emplace_back(pt);
-            if (root->rect[0] > pt.data[0])
-                root->rect[0] = pt.data[0];
-            if (root->rect[1] > pt.data[1])
-                root->rect[1] = pt.data[1];
-            if (root->rect[2] < pt.data[0])
-                root->rect[2] = pt.data[0];
-            if (root->rect[3] < pt.data[1])
-                root->rect[3] = pt.data[1];
+            Entry e;
+            e.id = id;
+            e.pt = {lon, lat};
+            firstPage->entries.emplace_back(e);
+            root->rect = root->getRect(e.pt);
+            firstPage->rect = root->getRect(e.pt);
             if (++i >= limit)
                 break;
         }
@@ -53,132 +46,59 @@ void Waffle::bulkload(string filename, long limit) {
 
     cout << "Initiate page fission" << endl;
     // Clear root of any existing contents.
-    root->unbind();
-    root->contents->clear();
-    root->points = Points;
-    root->fission(root);
-    root->ledger->pages = root->contents->size();
-    root->ledger->points = root->points->size();
-    root->height = 1;
-    root->points->clear();
-    root->points.reset();
+    dRoot->contents.clear();
+    dRoot->ledger.pages = ceil(firstPage->entries.size() / Page::capacity);
+    dRoot->ledger.points = firstPage->entries.size();
+    firstPage->fission(root);
+    delete firstPage;
 
     cout << "Initiate directory fission" << endl;
-    while (root->contents->size() > root->directoryCap) {
-        root->fusion(root);
-        root->height++;
-    }
+    while (dRoot->contents.size() > Directory::capacity)
+        dRoot->fusion(root);
 }
 
 Info Waffle::deleteQuery(Entry p) {
-    Node *node = root;
+    /* Node *node = root;
     while (node->contents) {
         auto cn = node->contents->begin();
         while (!(*cn)->containsPt(p.data))
             cn++;
         node = *cn;
-    }
+    } */
     Info stats;
-    // Find the point using the id and delete it.
     return stats;
 }
 
-Info Waffle::insertQuery(Entry pt) {
-    if (root->minSqrDist(pt.data) > 0)
-        root->rect = root->getRect(pt.data);
-    Info stats = root->insertPt(pt);
-    if (root->contents->size() > root->directoryCap) {
-        vector<Node *> newNodes = root->splitDirectory(root);
-        for (auto node : newNodes)
-            root->contents->emplace_back(node);
-        root->height++;
-    }
+Info Waffle::insertQuery(Entry e) {
+    if (root->minSqrDist(e.pt) > 0)
+        root->rect = root->getRect(e.pt);
+    Info stats = root->insert(root, 0, e);
     return stats;
 }
-
-struct knnEntry {
-    Entry pt;
-    double dist = numeric_limits<float>::max();
-    bool operator<(const knnEntry &second) const { return dist < second.dist; }
-};
-
-struct knnNode {
-    Node *self;
-    knnNode *parent;
-    double dist = numeric_limits<float>::max();
-    unordered_set<knnNode *> branch;
-
-    bool operator>(const knnNode &second) const { return dist > second.dist; }
-
-    Info track() {
-        Info info;
-        if (self->points) {
-            info.reads = 1;
-        } else {
-            for (auto kn : branch)
-                info += kn->track();
-            self->ledger->pages += info.pages;
-            self->ledger->reads += info.reads;
-            info += self->refresh();
-        }
-        return info;
-    }
-};
 
 Info Waffle::kNNQuery(Point queryPt, int k) {
-    auto calcSqrDist = [](Point x, Point y) {
-        return pow((x[0] - y[0]), 2) + pow((x[1] - y[1]), 2);
-    };
+    Rect query;
+    for (uint d = 0; d < D; d++)
+        query[d + D] = query[d] = queryPt[d];
 
-    vector<knnEntry> tempPts(k);
-    max_heap<knnEntry> knnPts(all(tempPts));
-    min_heap<knnNode *> unseenNodes;
-    vector<knnNode *> pool;
-    knnNode *rootKNode = new knnNode();
-    rootKNode->self = root;
+    min_heap<NbNode *> unseenNbs;
+    vector<NbEntry> tempEntries(k);
+    max_heap<NbEntry> knnEntries(all(tempEntries));
+    vector<NbNode *> pool;
+    NbNode *rootKNode = root->getNbNode();
     rootKNode->parent = NULL;
     rootKNode->dist = root->minSqrDist(queryPt);
-    unseenNodes.emplace(rootKNode);
+    unseenNbs.emplace(rootKNode);
     pool.emplace_back(rootKNode);
 
-    while (!unseenNodes.empty()) {
-        knnNode *kNode = unseenNodes.top();
-        Node *node = kNode->self;
-        double dist = kNode->dist;
-        unseenNodes.pop();
-        double minDist = knnPts.top().dist;
-        if (dist < minDist) {
-            if (node->points) {
-                for (auto p : node->points.value()) {
-                    minDist = knnPts.top().dist;
-                    dist = calcSqrDist(queryPt, p.data);
-                    if (dist < minDist) {
-                        knnEntry kPt;
-                        kPt.pt = p;
-                        kPt.dist = dist;
-                        knnPts.pop();
-                        knnPts.push(kPt);
-                    }
-                }
-                while (kNode->parent) {
-                    kNode->parent->branch.insert(kNode);
-                    kNode = kNode->parent;
-                }
-            } else {
-                minDist = knnPts.top().dist;
-                for (auto cn : node->contents.value()) {
-                    dist = cn->minSqrDist(queryPt);
-                    if (dist < minDist) {
-                        knnNode *kn = new knnNode();
-                        kn->self = cn;
-                        kn->parent = kNode;
-                        kn->dist = dist;
-                        unseenNodes.emplace(kn);
-                        pool.emplace_back(kn);
-                    }
-                }
-            }
-        } else
+    while (!unseenNbs.empty()) {
+        NbNode *nb = unseenNbs.top();
+        unseenNbs.pop();
+        double dist = nb->dist;
+        double minDist = knnEntries.top().dist;
+        if (dist < minDist)
+            nb->search(query, unseenNbs, knnEntries, pool);
+        else
             break;
     }
 
@@ -186,10 +106,10 @@ Info Waffle::kNNQuery(Point queryPt, int k) {
         double sqrDist;
         Entry pt;
         if (k == 32) {
-            while (!knnPts.empty()) {
-                pt = knnPts.top().pt;
-                sqrDist = knnPts.top().dist;
-                knnPts.pop();
+            while (!knnEntries.empty()) {
+                pt = knnEntries.top().pt;
+                sqrDist = knnEntries.top().dist;
+                knnEntries.pop();
                 trace(pt.id, sqrDist);
             }
         }
@@ -202,61 +122,20 @@ Info Waffle::kNNQuery(Point queryPt, int k) {
 }
 
 Info Waffle::rangeQuery(Rect query) {
-    Info stats = root->rangeSearch(query);
+    Info info = root->range(query);
     if constexpr (DEBUG) {
-        int pointCount = stats.points;
+        int pointCount = info.points;
         trace(pointCount);
     }
-    return stats;
+    return info;
 }
 
 void Waffle::snapshot() const {
-    ofstream log("Index.csv");
-    stack<Node *> toVisit({root});
-    Node *dir;
-    while (!toVisit.empty()) {
-        dir = toVisit.top();
-        toVisit.pop();
-        log << dir->height << "," << dir->contents->size();
-        for (auto p : dir->rect)
-            log << "," << p;
-        float tolerance = dir->ledger->writes / (dir->ledger->writes + dir->ledger->reads);
-        log << "," << tolerance;
-        log << endl;
-        for (auto cn : dir->contents.value()) {
-            if (cn->points) {
-                log << cn->height << "," << cn->points->size();
-                for (auto p : cn->rect)
-                    log << "," << p;
-                log << endl;
-            } else {
-                toVisit.push(cn);
-            }
-        }
-    }
-    log.close();
+    ofstream ofs("Index.csv");
+    root->snapshot(ofs);
+    ofs.close();
 }
 
-int Waffle::size(map<string, double> &stats) const {
-    int totalSize = 2 * sizeof(int);
-    int pageSize = 4 * sizeof(float) + sizeof(int) + sizeof(void *);
-    int directorySize = 4 * sizeof(float) + sizeof(int) + sizeof(void *) + sizeof(Node::Ledger);
-    int splitSize = 2 * sizeof(float) + sizeof(bool);
-    stack<Node *> toVisit({root});
-    Node *directory;
-    while (!toVisit.empty()) {
-        directory = toVisit.top();
-        toVisit.pop();
-        stats["directories"]++;
-        stats["splits"] += directory->splits->size();
-        for (auto cn : directory->contents.value()) {
-            if (cn->contents)
-                toVisit.push(cn);
-            else
-                stats["pages"]++;
-        }
-    }
-    totalSize += pageSize * stats["pages"] + directorySize * stats["directories"] +
-                 splitSize * stats["splits"];
-    return totalSize;
-}
+uint Waffle::size(About &about) const { return root->size(about); }
+
+Waffle::~Waffle() { delete root; }

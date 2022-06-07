@@ -61,14 +61,14 @@ constexpr uint oppDir(uint d) {return (d + D) % (D * 2);};
 
 struct Entry {
     int id;
-    Point data;
+    Point pt;
 };
 
 struct Info {
-    int pages = 0;
-    int points = 0;
-    int reads = 0;
-    int writes = 0;
+    uint pages = 0;
+    uint points = 0;
+    uint reads = 0;
+    uint writes = 0;
 
     Info operator+(Info i) {
         return Info{pages+i.pages, points+i.points, reads+i.reads, writes+i.writes};
@@ -76,4 +76,10 @@ struct Info {
     void operator+=(Info i) {
         *this = *this + i;
     }
+};
+
+struct About {
+    uint directories = 0;
+    uint pages = 0;
+    uint splits = 0;
 };
