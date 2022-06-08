@@ -46,7 +46,7 @@ NbNode *Page::getNbNode() {
 
 Info Page::insert(Node *pn, uint pos, const Entry &e) {
     entries.emplace_back(e);
-    Info info{.entries = 1, .pages = 0, .reads = 0, .writes = 2};
+    Info info{.entries = 1, .writes = 2};
     if (entries.size() > capacity) {
         array<Node *, 2> pages = split(pn);
         Directory *dpn = static_cast<Directory *>(pn);
@@ -62,17 +62,17 @@ Info Page::insert(Node *pn, uint pos, const Entry &e) {
 
 Info Page::range(const Rect &query) {
     Info info;
-    uint pointCount = 0;
+    uint numEntries = 0;
     if constexpr (DEBUG) {
         if (inside(query))
-            pointCount = entries.size();
+            numEntries = entries.size();
         else {
             for (auto e : entries)
                 if (overlaps(query, e.pt))
-                    pointCount++;
+                    numEntries++;
         }
     }
-    info = Info{.entries = pointCount, .reads = 1};
+    info = Info{.entries = numEntries, .reads = 1};
     return info;
 }
 

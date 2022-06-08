@@ -44,8 +44,8 @@ Info Directory::insert(Node *pn, uint pos, const Entry &e) {
         }
     }
     // If no child node contains the entry, find one to expand
-    Rect container = rect;
     if (key < 0) {
+        Rect container = rect;
         for (auto s : splits) {
             bool lCheck = container[0] < s.pt[0];
             bool rCheck = container[2] > s.pt[0];
@@ -116,7 +116,7 @@ Info Directory::refresh() {
             delete dummy;
             ledger.pages = contents.size();
             ledger.writes += numPages + ledger.pages;
-            return Info{ledger.pages - numPages, 0, 0, numPages + ledger.pages};
+            return Info{.pages = ledger.pages - numPages, .writes = numPages + ledger.pages};
         }
     }
     return Info();
