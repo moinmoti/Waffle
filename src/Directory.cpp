@@ -8,6 +8,13 @@ uint Directory::capacity;
 
 Directory::Directory() {}
 
+void Directory::aggrInfo(Info &info) const {
+    for (auto node : contents)
+        node->aggrInfo(info);
+}
+
+uint Directory::findHeight() const { return contents.front()->findHeight() + 1; }
+
 void Directory::fusion(Node *parent) {
     array<Node *, 2> dirs = split(parent);
     for (auto nd : dirs) {
@@ -18,19 +25,6 @@ void Directory::fusion(Node *parent) {
         } else
             static_cast<Directory *>(parent)->contents.emplace_back(dir);
     }
-}
-
-uint Directory::getHeight() const { return contents.front()->getHeight() + 1; }
-
-array<uint, 2> Directory::getInfo() const {
-    uint numPages = 0;
-    uint numPoints = 0;
-    for (auto node : contents) {
-        array temp = node->getInfo();
-        numPages += temp[0];
-        numPoints += temp[1];
-    }
-    return {numPages, numPoints};
 }
 
 NbNode *Directory::getNbNode() {
@@ -78,7 +72,7 @@ Info Directory::insert(Node *pn, uint pos, const Entry &e) {
 
     info = cn->insert(this, key, e);
     ledger.pages += info.pages;
-    ledger.points++;
+    ledger.entries++;
     ledger.writes += info.writes;
     if (contents.size() > capacity) {
         array<Node *, 2> dirs = split(pn);
@@ -108,20 +102,22 @@ Info Directory::range(const Rect &query) {
 }
 
 Info Directory::refresh() {
-    float fat = (ledger.pages / ceil(ledger.points / float(Page::capacity))) - 1;
-    float tolerance = ledger.writes / ledger.reads;
-    if (fat > tolerance) {
-        int numPages = ledger.pages;
-        Node *dummy = new Page();
-        dummy->rect = rect;
-        unbind(dummy);
-        contents.clear();
-        splits.clear();
-        static_cast<Page *>(dummy)->fission(this);
-        delete dummy;
-        ledger.pages = contents.size();
-        ledger.writes += numPages + ledger.pages;
-        return Info{ledger.pages - numPages, 0, 0, numPages + ledger.pages};
+    if (ledger.entries && findHeight() == 1) { // Limit refreshing to height 1.
+        float fat = (ledger.pages / ceil(ledger.entries / float(Page::capacity))) - 1;
+        float tolerance = float(ledger.writes) / ledger.reads;
+        if (fat > tolerance) {
+            int numPages = ledger.pages;
+            Node *dummy = new Page();
+            dummy->rect = rect;
+            unbind(dummy);
+            contents.clear();
+            splits.clear();
+            static_cast<Page *>(dummy)->fission(this);
+            delete dummy;
+            ledger.pages = contents.size();
+            ledger.writes += numPages + ledger.pages;
+            return Info{ledger.pages - numPages, 0, 0, numPages + ledger.pages};
+        }
     }
     return Info();
 }
@@ -155,12 +151,10 @@ array<Node *, 2> Directory::split(Node *pn) {
         static_cast<Directory *>(dirs[side])->splits.emplace_back(*isplit);
     }
 
-    for (auto dir : dirs) {
-        array temp = dir->getInfo();
-        static_cast<Directory *>(dir)->ledger = Ledger{.pages = temp[0],
-            .points = temp[1],
-            .reads = (ledger.reads + 1) / 2,
-            .writes = (ledger.writes + 1) / 2};
+    for (auto node : dirs) {
+        Directory *dir = static_cast<Directory *>(node);
+        dir->aggrInfo(dir->ledger);
+        dir->ledger += Info{.reads = (ledger.reads + 1) / 2, .writes = (ledger.writes + 1) / 2};
     }
 
     contents.clear();
@@ -172,8 +166,7 @@ array<Node *, 2> Directory::split(Node *pn) {
 array<Node *, 2> Directory::split(Node *pn, uint splitRank) { return split(pn); }
 
 void Directory::snapshot(ofstream &ofs) const {
-    uint height = getHeight();
-    ofs << height << "," << contents.size();
+    ofs << findHeight() << "," << contents.size();
     for (auto c : rect)
         ofs << "," << c;
     ofs << endl;

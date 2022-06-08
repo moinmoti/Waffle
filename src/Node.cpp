@@ -30,29 +30,6 @@ double Node::minSqrDist(const Rect &r) const {
     for (uint d = 0; d < D; d++)
         sqrDist += pow(max({0.f, rect[d + D] - r[d], r[d + D] - rect[d]}), 2);
     return sqrDist;
-    /* bool left = r[2] < rect[0];
-    bool right = rect[2] < r[0];
-    bool bottom = r[3] < rect[1];
-    bool top = rect[3] < r[1];
-    if (top) {
-        if (left)
-            return dist(rect[0], rect[3], r[2], r[1]);
-        if (right)
-            return dist(rect[2], rect[3], r[0], r[1]);
-        return (r[1] - rect[3]) * (r[1] - rect[3]);
-    }
-    if (bottom) {
-        if (left)
-            return dist(rect[0], rect[1], r[2], r[3]);
-        if (right)
-            return dist(rect[2], rect[1], r[0], r[3]);
-        return (rect[1] - r[3]) * (rect[1] - r[3]);
-    }
-    if (left)
-        return (rect[0] - r[2]) * (rect[0] - r[2]);
-    if (right)
-        return (r[0] - rect[2]) * (r[0] - rect[2]);
-    return 0; */
 }
 
 double Node::minSqrDist(const Point &q) const {
@@ -60,29 +37,6 @@ double Node::minSqrDist(const Point &q) const {
     for (uint d = 0; d < D; d++)
         sqrDist += pow(max({0.f, rect[d + D] - q[d], q[d] - rect[d]}), 2);
     return sqrDist;
-    /* bool left = q[0] < rect[0];
-    bool right = rect[2] < q[0];
-    bool bottom = q[1] < rect[1];
-    bool top = rect[3] < q[1];
-    if (top) {
-        if (left)
-            return dist(rect[0], rect[3], q[0], q[1]);
-        if (right)
-            return dist(rect[2], rect[3], q[0], q[1]);
-        return (q[1] - rect[3]) * (q[1] - rect[3]);
-    }
-    if (bottom) {
-        if (left)
-            return dist(rect[0], rect[1], q[0], q[1]);
-        if (right)
-            return dist(rect[2], rect[1], q[0], q[1]);
-        return (rect[1] - q[1]) * (rect[1] - q[1]);
-    }
-    if (left)
-        return (rect[0] - q[0]) * (rect[0] - q[0]);
-    if (right)
-        return (q[0] - rect[2]) * (q[0] - rect[2]);
-    return 0; */
 }
 
 bool Node::overlap(const Rect &r) const {

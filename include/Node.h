@@ -44,8 +44,8 @@ struct Node {
     Rect getRect(const Rect&) const;
 
     // Node methods
-    virtual uint getHeight() const = 0;
-    virtual array<uint, 2> getInfo() const = 0;
+    virtual void aggrInfo(Info&) const = 0;
+    virtual uint findHeight() const = 0;
     virtual NbNode* getNbNode() = 0;
     virtual Info insert(Node *, uint, const Entry&) = 0;
     virtual Info range(const Rect&) = 0;
@@ -59,24 +59,16 @@ struct Node {
 };
 
 struct Directory : Node {
-    // Ledger is different from Info structure.
-    struct Ledger {
-        uint pages = 0;
-        uint points = 0;
-        float reads = 0;
-        float writes = 1;
-    };
-
     static uint capacity;
-    Ledger ledger;
+    Info ledger;
     vector<Node*> contents;
     vector<Split> splits;
 
     Directory();
 
+    void aggrInfo(Info &) const;
+    uint findHeight() const;
     void fusion(Node *);
-    uint getHeight() const;
-    array<uint, 2> getInfo() const;
     NbNode* getNbNode();
     Info insert(Node *pn, uint, const Entry&);
     Info range(const Rect&);
@@ -108,9 +100,9 @@ struct Page : Node {
 
     Page();
 
+    void aggrInfo(Info &) const;
+    uint findHeight() const;
     void fission(Node *);
-    uint getHeight() const;
-    array<uint, 2> getInfo() const;
     NbNode* getNbNode();
     Info insert(Node *pn, uint, const Entry&);
     Info range(const Rect&);

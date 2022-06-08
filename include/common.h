@@ -13,7 +13,6 @@
 #include <limits>
 #include <math.h>
 #include <map>
-#include <optional>
 #include <queue>
 #include <vector>
 #include <sstream>
@@ -59,27 +58,27 @@ constexpr double distManhattan(float x1, float y1, float x2, float y2) {
 }
 constexpr uint oppDir(uint d) {return (d + D) % (D * 2);};
 
+struct About {
+    uint directories = 0;
+    uint pages = 0;
+    uint splits = 0;
+};
+
 struct Entry {
     int id;
     Point pt;
 };
 
 struct Info {
+    uint entries = 0;
     uint pages = 0;
-    uint points = 0;
     uint reads = 0;
     uint writes = 0;
 
     Info operator+(Info i) {
-        return Info{pages+i.pages, points+i.points, reads+i.reads, writes+i.writes};
+        return Info{entries+i.entries, pages+i.pages, reads+i.reads, writes+i.writes};
     }
     void operator+=(Info i) {
         *this = *this + i;
     }
-};
-
-struct About {
-    uint directories = 0;
-    uint pages = 0;
-    uint splits = 0;
 };

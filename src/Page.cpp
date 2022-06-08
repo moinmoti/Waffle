@@ -20,6 +20,10 @@ inline bool overlaps(Rect r, Point p) {
 
 Page::Page() {}
 
+void Page::aggrInfo(Info &info) const { info += Info{.entries = uint(entries.size()), .pages = 1}; }
+
+uint Page::findHeight() const { return 0; }
+
 void Page::fission(Node *parent) {
     long splitRank = entries.size() / 2;
     if (splitRank > capacity)
@@ -35,10 +39,6 @@ void Page::fission(Node *parent) {
     }
 }
 
-uint Page::getHeight() const { return 0; }
-
-array<uint, 2> Page::getInfo() const { return {1, uint(entries.size())}; }
-
 NbNode *Page::getNbNode() {
     NbNode *NbNode = new NbPage(this);
     return NbNode;
@@ -46,7 +46,7 @@ NbNode *Page::getNbNode() {
 
 Info Page::insert(Node *pn, uint pos, const Entry &e) {
     entries.emplace_back(e);
-    Info info{.pages = 0, .points = 1, .reads = 0, .writes = 2};
+    Info info{.entries = 1, .pages = 0, .reads = 0, .writes = 2};
     if (entries.size() > capacity) {
         array<Node *, 2> pages = split(pn);
         Directory *dpn = static_cast<Directory *>(pn);
@@ -72,7 +72,7 @@ Info Page::range(const Rect &query) {
                     pointCount++;
         }
     }
-    info = Info{.points = pointCount, .reads = 1};
+    info = Info{.entries = pointCount, .reads = 1};
     return info;
 }
 

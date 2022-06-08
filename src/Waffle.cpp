@@ -9,7 +9,7 @@ Waffle::Waffle(int _directoryCap, int _pageCap) {
     Page::capacity = _pageCap;
     root = new Directory();
     Directory *dRoot = static_cast<Directory *>(root);
-    dRoot->ledger = Directory::Ledger{.pages = 1, .points = 1};
+    dRoot->ledger = Info{.pages = 1};
 
     Node *firstPage = new Page();
     dRoot->contents.emplace_back(firstPage);
@@ -20,7 +20,6 @@ void Waffle::bulkload(string filename, long limit) {
     ifstream file(filename);
 
     int i = 0;
-    // vector<Entry> Points;
     Directory *dRoot = static_cast<Directory *>(root);
     Page *firstPage = static_cast<Page *>(dRoot->contents.front());
     firstPage->entries.reserve(limit);
@@ -48,7 +47,7 @@ void Waffle::bulkload(string filename, long limit) {
     // Clear root of any existing contents.
     dRoot->contents.clear();
     dRoot->ledger.pages = ceil(firstPage->entries.size() / Page::capacity);
-    dRoot->ledger.points = firstPage->entries.size();
+    dRoot->ledger.entries = firstPage->entries.size();
     firstPage->fission(root);
     delete firstPage;
 
@@ -85,11 +84,11 @@ Info Waffle::kNNQuery(Point queryPt, int k) {
     vector<NbEntry> tempEntries(k);
     max_heap<NbEntry> knnEntries(all(tempEntries));
     vector<NbNode *> pool;
-    NbNode *rootKNode = root->getNbNode();
-    rootKNode->parent = NULL;
-    rootKNode->dist = root->minSqrDist(queryPt);
-    unseenNbs.emplace(rootKNode);
-    pool.emplace_back(rootKNode);
+    NbNode *rootNb = root->getNbNode();
+    rootNb->parent = NULL;
+    rootNb->dist = root->minSqrDist(queryPt);
+    unseenNbs.emplace(rootNb);
+    pool.emplace_back(rootNb);
 
     while (!unseenNbs.empty()) {
         NbNode *nb = unseenNbs.top();
@@ -115,7 +114,7 @@ Info Waffle::kNNQuery(Point queryPt, int k) {
         }
     }
 
-    Info info = rootKNode->track();
+    Info info = rootNb->track();
     for (auto kn : pool)
         delete kn;
     return info;
@@ -124,8 +123,8 @@ Info Waffle::kNNQuery(Point queryPt, int k) {
 Info Waffle::rangeQuery(Rect query) {
     Info info = root->range(query);
     if constexpr (DEBUG) {
-        int pointCount = info.points;
-        trace(pointCount);
+        int numEntries = info.entries;
+        trace(numEntries);
     }
     return info;
 }
