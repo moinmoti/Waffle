@@ -38,7 +38,7 @@ Info Directory::insert(Node *pn, uint pos, const Entry &e) {
 
     // Check if a child node contains the entry.
     for (uint i = 0; i < contents.size(); i++) {
-        if (contents[i]->containsPt(e.pt)) {
+        if (contents[i]->contains(e.pt)) {
             key = i;
             break;
         }

@@ -1,7 +1,7 @@
 #include "Waffle.h"
 
-void printRect(string str, Rect r) {
-    cerr << str << ": " << r[0] << " | " << r[1] << " | " << r[2] << " | " << r[3] << endl;
+void printRect(string msg, Rect r) {
+    cerr << msg << ": " << r[0] << " | " << r[1] << " | " << r[2] << " | " << r[3] << endl;
 }
 
 Waffle::Waffle(int _directoryCap, int _pageCap) {
@@ -69,10 +69,10 @@ Info Waffle::deleteQuery(Entry p) {
 }
 
 Info Waffle::insertQuery(Entry e) {
-    if (root->minSqrDist(e.pt) > 0)
+    if (!root->contains(e.pt))
         root->rect = root->getRect(e.pt);
-    Info stats = root->insert(root, 0, e);
-    return stats;
+    Info info = root->insert(root, 0, e);
+    return info;
 }
 
 Info Waffle::kNNQuery(Point queryPt, int k) {

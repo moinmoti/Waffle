@@ -27,14 +27,14 @@ struct Node {
     };
 
     Rect rect = {
-        numeric_limits<float>::max(),
-        numeric_limits<float>::max(),
-        numeric_limits<float>::lowest(),
-        numeric_limits<float>::lowest(),
+        sqrt(numeric_limits<float>::max())/2,
+        sqrt(numeric_limits<float>::max())/2,
+        -sqrt(numeric_limits<float>::max())/2,
+        -sqrt(numeric_limits<float>::max())/2,
     };
 
     // Rect methods
-    bool containsPt(const Point&) const;
+    bool contains(const Point&) const;
     Point getCenter() const;
     bool inside(const Rect&) const;
     double minSqrDist(const Rect&) const;
