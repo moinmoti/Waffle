@@ -15,7 +15,7 @@ Waffle::Waffle(int _directoryCap, int _pageCap) {
     dRoot->contents.emplace_back(firstPage);
 }
 
-void Waffle::bulkload(string filename, long limit) {
+void Waffle::bulkload(string const &filename, long const &limit) {
     string line;
     ifstream file(filename);
 
@@ -56,7 +56,7 @@ void Waffle::bulkload(string filename, long limit) {
         dRoot->fusion(root);
 }
 
-Info Waffle::deleteQuery(Entry p) {
+Info Waffle::deleteQuery(Entry const &p) {
     /* Node *node = root;
     while (node->contents) {
         auto cn = node->contents->begin();
@@ -68,24 +68,19 @@ Info Waffle::deleteQuery(Entry p) {
     return stats;
 }
 
-Info Waffle::insertQuery(Entry e) {
+Info Waffle::insertQuery(Entry const &e) {
     if (!root->contains(e.pt))
         root->rect = root->getRect(e.pt);
     Info info = root->insert(root, 0, e);
     return info;
 }
 
-Info Waffle::kNNQuery(Point queryPt, int k) {
-    Rect query;
-    for (uint d = 0; d < D; d++)
-        query[d + D] = query[d] = queryPt[d];
-
-    min_heap<NbNode *> unseenNbs;
+Info Waffle::kNNQuery(Point const &queryPt, uint const &k) {
+    min_heap<NbNode *, NbNode::cmp> unseenNbs;
     vector<NbEntry> tempEntries(k);
     max_heap<NbEntry> knnEntries(all(tempEntries));
     vector<NbNode *> pool;
     NbNode *rootNb = root->getNbNode();
-    rootNb->parent = NULL;
     rootNb->dist = root->minSqrDist(queryPt);
     unseenNbs.emplace(rootNb);
     pool.emplace_back(rootNb);
@@ -93,24 +88,22 @@ Info Waffle::kNNQuery(Point queryPt, int k) {
     while (!unseenNbs.empty()) {
         NbNode *nb = unseenNbs.top();
         unseenNbs.pop();
-        double dist = nb->dist;
         double minDist = knnEntries.top().dist;
-        if (dist < minDist)
-            nb->search(query, unseenNbs, knnEntries, pool);
+        if (nb->dist < minDist)
+            nb->search(queryPt, unseenNbs, knnEntries, pool);
         else
             break;
     }
 
     if constexpr (DEBUG) {
-        double sqrDist;
-        Entry pt;
         if (k == 32) {
             while (!knnEntries.empty()) {
-                pt = knnEntries.top().pt;
-                sqrDist = knnEntries.top().dist;
+                Entry entry = knnEntries.top().entry;
+                double sqrDist = knnEntries.top().dist;
                 knnEntries.pop();
-                trace(pt.id, sqrDist);
+                trace(entry.id, sqrDist);
             }
+            cerr << endl;
         }
     }
 
@@ -120,11 +113,12 @@ Info Waffle::kNNQuery(Point queryPt, int k) {
     return info;
 }
 
-Info Waffle::rangeQuery(Rect query) {
+Info Waffle::rangeQuery(Rect const &query) {
     Info info = root->range(query);
     if constexpr (DEBUG) {
         int numEntries = info.entries;
         trace(numEntries);
+        cerr << endl;
     }
     return info;
 }

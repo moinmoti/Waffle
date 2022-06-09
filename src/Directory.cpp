@@ -32,7 +32,7 @@ NbNode *Directory::getNbNode() {
     return nb;
 }
 
-Info Directory::insert(Node *pn, uint pos, const Entry &e) {
+Info Directory::insert(Node *pn, uint pos, Entry const &e) {
     Info info;
     int key = -1;
 
@@ -89,7 +89,7 @@ Info Directory::insert(Node *pn, uint pos, const Entry &e) {
     return info;
 }
 
-Info Directory::range(const Rect &query) {
+Info Directory::range(Rect const &query) {
     Info info;
     for (auto cn : contents) {
         if (cn->overlap(query))
@@ -130,7 +130,7 @@ uint Directory::size(About &about) const {
         totalSize += cn->size(about);
     totalSize += 4 * sizeof(float) + sizeof(uint) + sizeof(void *);  // Node size
     totalSize += splits.size() * (2 * sizeof(float) + sizeof(bool)); // Split sizes
-    totalSize += 2 * (sizeof(uint) + sizeof(float));                 // ledger size
+    totalSize += 4 * sizeof(uint);                                   // ledger size
     return totalSize;
 }
 
@@ -201,11 +201,11 @@ void NbDirectory::enlist(NbNode *childNb) {
         static_cast<NbDirectory *>(parent)->enlist(this);
 }
 
-void NbDirectory::search(const Rect &query, min_heap<NbNode *> &unseenNbs,
+void NbDirectory::search(Point const &queryPt, min_heap<NbNode *, cmp> &unseenNbs,
     max_heap<NbEntry> &knnEntries, vector<NbNode *> &pool) {
     double minDist = knnEntries.top().dist;
     for (auto cn : self->contents) {
-        double cnDist = cn->minSqrDist(query);
+        double cnDist = cn->minSqrDist(queryPt);
         if (cnDist < minDist) {
             NbNode *childNb = cn->getNbNode();
             childNb->parent = this;

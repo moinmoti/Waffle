@@ -44,7 +44,7 @@ NbNode *Page::getNbNode() {
     return NbNode;
 }
 
-Info Page::insert(Node *pn, uint pos, const Entry &e) {
+Info Page::insert(Node *pn, uint pos, Entry const &e) {
     entries.emplace_back(e);
     Info info{.entries = 1, .writes = 2};
     if (entries.size() > capacity) {
@@ -60,7 +60,7 @@ Info Page::insert(Node *pn, uint pos, const Entry &e) {
     return info;
 }
 
-Info Page::range(const Rect &query) {
+Info Page::range(Rect const &query) {
     Info info;
     uint numEntries = 0;
     if constexpr (DEBUG) {
@@ -84,7 +84,7 @@ uint Page::size(About &about) const {
 
 array<Node *, 2> Page::split(Node *pn, uint splitRank) {
     bool axis = (rect[2] - rect[0]) < (rect[3] - rect[1]);
-    sort(all(entries), [axis](const Entry &l, const Entry &r) { return l.pt[axis] < r.pt[axis]; });
+    sort(all(entries), [axis](Entry const &l, Entry const &r) { return l.pt[axis] < r.pt[axis]; });
     Split newSplit = Split();
     newSplit.axis = axis;
     newSplit.pt[axis] = entries[splitRank].pt[axis];
@@ -134,20 +134,20 @@ Page::~Page() { entries.clear(); }
 
 NbPage::NbPage(Page *_self) : self(_self){};
 
-void NbPage::search(const Rect &query, min_heap<NbNode *> &unseenNbs, max_heap<NbEntry> &knnEntries,
-    vector<NbNode *> &pool) {
-    auto calcSqrDist = [](Rect x, Point y) {
+void NbPage::search(Point const &queryPt, min_heap<NbNode *, cmp> &unseenNbs,
+    max_heap<NbEntry> &knnEntries, vector<NbNode *> &pool) {
+    auto calcSqrDist = [](Point x, Point y) {
         return pow((x[0] - y[0]), 2) + pow((x[1] - y[1]), 2);
     };
     for (auto e : self->entries) {
         double minDist = knnEntries.top().dist;
-        double dist = calcSqrDist(query, e.pt);
-        if (dist < minDist) {
-            NbEntry kPt;
-            kPt.pt = e;
-            kPt.dist = dist;
+        double eDist = calcSqrDist(queryPt, e.pt);
+        if (eDist < minDist) {
+            NbEntry nbEnt;
+            nbEnt.entry = e;
+            nbEnt.dist = eDist;
             knnEntries.pop();
-            knnEntries.push(kPt);
+            knnEntries.push(nbEnt);
         }
     }
     if (parent)

@@ -17,7 +17,7 @@ void knnQuery(tuple<char, vector<float>, float> q, Waffle *index, Stats &stats) 
     Point p;
     for (uint i = 0; i < p.size(); i++)
         p[i] = get<1>(q)[i];
-    int k = get<2>(q);
+    uint k = get<2>(q);
     Info info = index->kNNQuery(p, k);
     stats.knn[k].io += info.reads;
     if (info.writes > 0) {
