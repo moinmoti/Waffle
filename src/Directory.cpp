@@ -32,7 +32,7 @@ NbNode *Directory::getNbNode() {
     return nb;
 }
 
-Info Directory::insert(Node *pn, uint pos, Entry const &e) {
+Info Directory::insert(Node *parent, uint pos, Entry const &e) {
     Info info;
     int key = -1;
 
@@ -75,16 +75,16 @@ Info Directory::insert(Node *pn, uint pos, Entry const &e) {
     ledger.entries++;
     ledger.writes += info.writes;
     if (contents.size() > capacity) {
-        array<Node *, 2> dirs = split(pn);
-        Directory *dpn = static_cast<Directory *>(pn);
-        if (this == pn) // if root.
-            dpn->contents.clear();
+        array<Node *, 2> dirs = split(parent);
+        Directory *parentDir = static_cast<Directory *>(parent);
+        if (this == parent) // if root.
+            parentDir->contents.clear();
         else {
-            dpn->contents.erase(dpn->contents.begin() + pos);
+            parentDir->contents.erase(parentDir->contents.begin() + pos);
             delete this;
         }
         for (auto dir : dirs)
-            dpn->contents.emplace_back(dir);
+            parentDir->contents.emplace_back(dir);
     }
     return info;
 }
