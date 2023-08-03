@@ -1,25 +1,6 @@
 # Waffle
 
-This is an implementation of the Waffle data structure in C++, published in VLDB-23.
-
-```bibtex
-@article{moti_waffle_2022,
-	title = {Waffle: {A} {Workload}-{Aware} and {Query}-{Sensitive} {Framework} for {Disk}-{Based} {Spatial} {Indexing}},
-	volume = {16},
-	issn = {2150-8097},
-	shorttitle = {Waffle},
-	url = {https://dl.acm.org/doi/10.14778/3574245.3574253},
-	doi = {10.14778/3574245.3574253},
-	language = {en},
-	number = {4},
-	urldate = {2023-08-03},
-	journal = {Proceedings of the VLDB Endowment},
-	author = {Moti, Moin Hussain and Simatis, Panagiotis and Papadias, Dimitris},
-	month = dec,
-	year = {2022},
-	pages = {670--683},
-}
-```
+This is an implementation of the Waffle data structure in C++.
 
 [[_TOC_]]
 
@@ -140,7 +121,26 @@ Make sure to enable `BULKLOAD` in the config file before executing this script.
 
 The program runs fine for benchmarking purposes, but may undergo refactoring to improve overall readability and code aesthetics. Users are advised to clone the main branch for the best version of the program. Follow this [link](https://gitlab.com/moinmoti/waffle) to access the repository.
 
-## Contact
+## Contact/Citation
 
 Name: Moin Hussain Moti\
-Email: mhmoti@connect.ust.hk
+Email: mhmoti@connect.ust.hk\
+Waffle was published in VLDB-23, please use the following bibtex entry to cite the paper:
+```bibtex
+@article{moti_waffle_2022,
+	title = {Waffle: {A} {Workload}-{Aware} and {Query}-{Sensitive} {Framework} for {Disk}-{Based} {Spatial} {Indexing}},
+	volume = {16},
+	issn = {2150-8097},
+	shorttitle = {Waffle},
+	url = {https://dl.acm.org/doi/10.14778/3574245.3574253},
+	doi = {10.14778/3574245.3574253},
+	language = {en},
+	number = {4},
+	urldate = {2023-08-03},
+	journal = {Proceedings of the VLDB Endowment},
+	author = {Moti, Moin Hussain and Simatis, Panagiotis and Papadias, Dimitris},
+	month = dec,
+	year = {2022},
+	pages = {670--683},
+}
+```
